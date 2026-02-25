@@ -16,6 +16,13 @@ LANGUAGE_REGISTRY = {
     "java": tree_sitter_java,
 }
 
+TOP_LEVEL_NODE_TYPES = {
+    "python": {"function_definition", "class_definition"},
+    "javascript": {"function_declaration", "class_declaration", "method_definition"},
+    "typescript": {"function_declaration", "class_declaration", "method_definition"},
+    "go": {"function_declaration", "method_declaration"},
+    "java": {"class_declaration", "method_declaration"},
+}
 
 @lru_cache
 def get_parser(language: str) -> Parser:
