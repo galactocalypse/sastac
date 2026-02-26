@@ -1,0 +1,3 @@
+embeddings:
+  model: bge-small-en
+  vector_size: 384
