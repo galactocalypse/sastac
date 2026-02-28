@@ -28,6 +28,11 @@ class CodeChunk:
     body: str
     docstring: Optional[str]
 
+    class_name: Optional[str] = None
+    class_annotations: list[str] | None = None
+    method_annotations: list[str] | None = None
+    package: Optional[str] = None
+
     def to_metadata(self):
         return asdict(self)
 
@@ -67,6 +72,17 @@ def _extract_docstring(node: Node, language: str, source: str) -> Optional[str]:
     return None
 
 
+def _extract_annotations(node: Node, source: str) -> list[str]:
+    anns = []
+
+    for child in node.children:
+        # Java tree-sitter uses these
+        if child.type in {"annotation", "marker_annotation"}:
+            anns.append(source[child.start_byte:child.end_byte])
+
+    return anns
+
+
 def _extract_signature(node: Node, source: str) -> str:
     """
     Extract header portion (everything before block/body if present).
@@ -75,6 +91,14 @@ def _extract_signature(node: Node, source: str) -> str:
         if child.type in {"block", "statement_block"}:
             return source[node.start_byte : child.start_byte].strip()
     return _node_text(node, source)
+
+
+def _extract_package(root: Node, source: str) -> Optional[str]:
+    for child in root.children:
+        if child.type == "package_declaration":
+            text = source[child.start_byte:child.end_byte]
+            return text.replace("package", "").replace(";", "").strip()
+    return None
 
 
 # -----------------------------
@@ -88,6 +112,9 @@ def _collect_nodes_recursive(
     allowed_types: set,
     parent_name: Optional[str] = None,
     depth: int = 0,
+    current_class=None,
+    class_annotations=None,
+    package=None,
 ) -> List[CodeChunk]:
 
     chunks: List[CodeChunk] = []
@@ -96,6 +123,16 @@ def _collect_nodes_recursive(
 
     if node.type in allowed_types:
         name = _extract_identifier(node)
+
+        current_class = None
+        class_annotations = []
+        if node.type == "class_declaration":
+            current_class = _extract_identifier(node)
+            class_annotations = _extract_annotations(node, source)
+        
+        method_annotations = None
+        if node.type in {"method_declaration", "constructor_declaration"}:
+            method_annotations = _extract_annotations(node, source)
 
         chunk = CodeChunk(
             language=language,
@@ -110,6 +147,10 @@ def _collect_nodes_recursive(
             signature=_extract_signature(node, source),
             body=_node_text(node, source),
             docstring=_extract_docstring(node, language, source),
+            class_name=current_class,
+            class_annotations=class_annotations,
+            method_annotations=method_annotations,
+            package=package,
         )
 
         chunks.append(chunk)
@@ -124,6 +165,9 @@ def _collect_nodes_recursive(
                 allowed_types,
                 parent_name=current_name,
                 depth=depth + 1,
+                current_class=current_class,
+                class_annotations=class_annotations,
+                package=package,
             )
         )
 
@@ -145,6 +189,10 @@ def extract_code_chunks(language: str, source: str) -> List[CodeChunk]:
 
     allowed_types = TOP_LEVEL_NODE_TYPES.get(language, set())
 
+    package = None
+    if language == "java":
+        package = _extract_package(root, source)
+
     return _collect_nodes_recursive(
         root,
         language,
@@ -152,4 +200,5 @@ def extract_code_chunks(language: str, source: str) -> List[CodeChunk]:
         allowed_types,
         parent_name=None,
         depth=0,
+        package=package,
     )

@@ -21,7 +21,14 @@ TOP_LEVEL_NODE_TYPES = {
     "javascript": {"function_declaration", "class_declaration", "method_definition"},
     "typescript": {"function_declaration", "class_declaration", "method_definition"},
     "go": {"function_declaration", "method_declaration"},
-    "java": {"class_declaration", "method_declaration"},
+    "java": {"class_declaration",
+        "method_declaration",
+        "interface_declaration",
+        "enum_declaration",
+        "constructor_declaration",
+        "annotation_type_declaration",
+        "record_declaration",
+    },
 }
 
 @lru_cache

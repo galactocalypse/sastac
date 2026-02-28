@@ -1,0 +1,86 @@
+
+================================================================================
+FILE COVERAGE
+================================================================================
+Indexed files: 1399
+  java: 987
+  typescript: 396
+  javascript: 16
+
+Backend files detected: 1115
+
+================================================================================
+CHUNK COVERAGE
+================================================================================
+Files with chunks: 486
+Backend chunk files: 1719
+Vendor chunks: 54/2000
+
+Top chunked files:
+    49  /home/adarsh/code/booklore/booklore-api/src/test/java/org/booklore/service/metadata/extractor/EpubMetadataExtractorTest.java
+    48  /home/adarsh/code/booklore/booklore-api/src/test/java/org/booklore/service/bookdrop/FilenamePatternExtractorTest.java
+    46  /home/adarsh/code/booklore/booklore-api/src/test/java/org/booklore/service/metadata/extractor/ExtractFromComicInfoXmlTest.java
+    45  /home/adarsh/code/booklore/booklore-api/src/test/java/org/booklore/service/BookRuleEvaluatorServiceIntegrationTest.java
+    43  /home/adarsh/code/booklore/booklore-api/src/test/java/org/booklore/util/BookUtilsTest.java
+    42  /home/adarsh/code/booklore/booklore-api/src/test/java/org/booklore/service/metadata/extractor/Fb2MetadataExtractorTest.java
+    40  /home/adarsh/code/booklore/booklore-api/src/test/java/org/booklore/service/BookRuleEvaluatorFieldCoverageTest.java
+    37  /home/adarsh/code/booklore/booklore-api/src/test/java/org/booklore/service/book/DuplicateDetectionServiceTest.java
+    32  /home/adarsh/code/booklore/booklore-api/src/test/java/org/booklore/util/PathPatternResolverTest.java
+    31  /home/adarsh/code/booklore/booklore-api/src/test/java/org/booklore/util/koreader/CfiConvertorTest.java
+
+================================================================================
+CHUNK SIZE ANALYSIS
+================================================================================
+Avg lines/chunk: 25.1
+Min lines/chunk: 0
+Max lines/chunk: 504
+
+================================================================================
+EMBEDDING DIVERSITY
+================================================================================
+Embeddings differ → OK.
+
+================================================================================
+SEMANTIC RETRIEVAL
+================================================================================
+
+Query: spring controller
+  /home/adarsh/code/booklore/booklore-api/src/main/java/org/booklore/BookloreApplication.java
+  /home/adarsh/code/booklore/booklore-api/src/main/java/org/booklore/BookloreApplication.java
+  /home/adarsh/code/booklore/booklore-api/src/main/java/org/booklore/mapper/EpubMetadataMapper.java
+  /home/adarsh/code/booklore/booklore-api/src/main/java/org/booklore/mapper/BookNoteV2Mapper.java
+  /home/adarsh/code/booklore/booklore-api/src/main/java/org/booklore/mapper/BookMarkMapper.java
+
+Query: database repository
+  /home/adarsh/code/booklore/booklore-api/src/main/java/org/booklore/repository/BookShelfMappingRepository.java
+  /home/adarsh/code/booklore/booklore-api/src/main/java/org/booklore/repository/KoboLibrarySnapshotRepository.java
+  /home/adarsh/code/booklore/booklore-api/src/main/java/org/booklore/repository/UserRepository.java
+  /home/adarsh/code/booklore/booklore-api/src/main/java/org/booklore/repository/LibraryRepository.java
+  /home/adarsh/code/booklore/booklore-api/src/main/java/org/booklore/repository/BookMetadataCategoryMappingRepository.java
+
+Query: hibernate entity
+  /home/adarsh/code/booklore/booklore-api/src/main/java/org/booklore/model/entity/PdfAnnotationEntity.java
+  /home/adarsh/code/booklore/booklore-api/src/main/java/org/booklore/model/entity/AnnotationEntity.java
+  /home/adarsh/code/booklore/booklore-api/src/main/java/org/booklore/model/entity/KoboLibrarySnapshotEntity.java
+  /home/adarsh/code/booklore/booklore-api/src/main/java/org/booklore/model/entity/MoodEntity.java
+  /home/adarsh/code/booklore/booklore-api/src/main/java/org/booklore/model/entity/AuthorEntity.java
+
+Query: rest api endpoint
+  /home/adarsh/code/booklore/booklore-api/src/main/java/org/booklore/service/metadata/parser/hardcover/HardcoverBookSearchService.java
+  /home/adarsh/code/booklore/booklore-api/src/main/java/org/booklore/crons/CronService.java
+  /home/adarsh/code/booklore/booklore-api/src/main/java/org/booklore/service/hardcover/HardcoverSyncService.java
+  /home/adarsh/code/booklore/booklore-api/src/main/java/org/booklore/service/VersionService.java
+  /home/adarsh/code/booklore/booklore-api/src/main/java/org/booklore/controller/MobileOidcController.java
+
+Query: authentication service
+  /home/adarsh/code/booklore/booklore-api/src/main/java/org/booklore/service/book/BookMarkService.java
+  /home/adarsh/code/booklore/booklore-api/src/main/java/org/booklore/service/book/BookNoteV2Service.java
+  /home/adarsh/code/booklore/booklore-api/src/main/java/org/booklore/service/book/AnnotationService.java
+  /home/adarsh/code/booklore/booklore-api/src/main/java/org/booklore/service/book/PdfAnnotationService.java
+  /home/adarsh/code/booklore/booklore-api/src/main/java/org/booklore/service/ShelfService.java
+
+================================================================================
+BOOKLORE CHECKS
+================================================================================
+Backend files indexed: 1047
+UI files indexed: 412

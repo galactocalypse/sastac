@@ -44,7 +44,7 @@ def test_user_override(tmp_path, monkeypatch):
     """
 
     fake_default = {
-        "embeddings": {"model": "default", "vector_size": 384},
+        "embeddings": {"model": "default", "vector_size": 1024},
         "storage": {"qdrant_path": "/tmp/qdrant"},
     }
 
@@ -71,7 +71,7 @@ def test_workspace_override(tmp_path, monkeypatch):
     """
 
     fake_default = {
-        "embeddings": {"model": "default", "vector_size": 384},
+        "embeddings": {"model": "default", "vector_size": 1024},
         "storage": {"qdrant_path": "/tmp/qdrant"},
     }
 
@@ -103,7 +103,7 @@ def test_missing_files(tmp_path, monkeypatch):
     """
 
     fake_default = {
-        "embeddings": {"model": "default", "vector_size": 384},
+        "embeddings": {"model": "default", "vector_size": 1024},
         "storage": {"qdrant_path": "/tmp/qdrant"},
     }
 
@@ -115,4 +115,4 @@ def test_missing_files(tmp_path, monkeypatch):
 
     cfg = load_config(tmp_path / "workspace")
 
-    assert cfg.embeddings.vector_size == 384
+    assert cfg.embeddings.vector_size == 1024

@@ -1,0 +1,300 @@
+
+======================================================================
+FILE METADATA
+======================================================================
+Indexed files: 1399
+
+Languages:
+  java: 987
+  typescript: 12
+  javascript: 1
+
+Booklore split:
+  backend files: 0
+  ui files     : 13
+
+======================================================================
+VECTOR INDEX
+======================================================================
+Sample vector hits: 20
+
+Example payload:
+  file: /home/adarsh/code/booklore/booklore-api/src/main/java/org/booklore/model/dto/Pag
+  name: getStartTime
+  node_type: method_declaration
+  signature: Instant getStartTime();
+  start_line: 10
+  end_line: 10
+
+======================================================================
+CHUNK DISTRIBUTION
+======================================================================
+Files with chunks: 99
+Backend files with chunks: 0
+
+Top backend files:
+
+======================================================================
+SEMANTIC RETRIEVAL
+======================================================================
+
+Query: spring controller
+
+  Result 1:
+    file: /home/adarsh/code/booklore/booklore-api/src/main/java/org/booklore/BookloreApplication.java
+    type: method_declaration
+    sig : public static void main(String[] args)
+
+  Result 2:
+    file: /home/adarsh/code/booklore/booklore-api/src/main/java/org/booklore/BookloreApplication.java
+    type: class_declaration
+    sig : @EnableScheduling
+@EnableAsync
+@EnableConfigurationProperties(BookmarkProperties.class)
+@SpringBootApplication
+public cl
+
+  Result 3:
+    file: /home/adarsh/code/booklore/booklore-api/src/main/java/org/booklore/mapper/EpubMetadataMapper.java
+    type: interface_declaration
+    sig : @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+public interface EpubMetadataMapper {
+
+
+  Result 4:
+    file: /home/adarsh/code/booklore/booklore-api/src/main/java/org/booklore/mapper/BookNoteV2Mapper.java
+    type: interface_declaration
+    sig : @Mapper(componentModel = "spring")
+public interface BookNoteV2Mapper {
+
+    @Mapping(source = "book.id", target = "bookI
+
+  Result 5:
+    file: /home/adarsh/code/booklore/booklore-api/src/main/java/org/booklore/mapper/BookMarkMapper.java
+    type: interface_declaration
+    sig : @Mapper(componentModel = "spring")
+public interface BookMarkMapper {
+
+    @Mapping(source = "book.id", target = "bookId"
+
+Query: database repository
+
+  Result 1:
+    file: /home/adarsh/code/booklore/booklore-api/src/main/java/org/booklore/repository/BookShelfMappingRepository.java
+    type: interface_declaration
+    sig : @Repository
+public interface BookShelfMappingRepository extends JpaRepository<BookShelfMapping, BookShelfKey> {
+}
+
+  Result 2:
+    file: /home/adarsh/code/booklore/booklore-api/src/main/java/org/booklore/repository/KoboLibrarySnapshotRepository.java
+    type: interface_declaration
+    sig : @Repository
+public interface KoboLibrarySnapshotRepository extends JpaRepository<KoboLibrarySnapshotEntity, String> {
+
+ 
+
+  Result 3:
+    file: /home/adarsh/code/booklore/booklore-api/src/main/java/org/booklore/repository/UserRepository.java
+    type: interface_declaration
+    sig : @Repository
+public interface UserRepository extends JpaRepository<BookLoreUserEntity, Long> {
+
+    Optional<BookLoreUser
+
+  Result 4:
+    file: /home/adarsh/code/booklore/booklore-api/src/main/java/org/booklore/repository/LibraryRepository.java
+    type: interface_declaration
+    sig : @Repository
+public interface LibraryRepository extends JpaRepository<LibraryEntity, Long>, JpaSpecificationExecutor<Libr
+
+  Result 5:
+    file: /home/adarsh/code/booklore/booklore-api/src/main/java/org/booklore/repository/BookMetadataCategoryMappingRepository.java
+    type: interface_declaration
+    sig : @Repository
+public interface BookMetadataCategoryMappingRepository extends JpaRepository<BookMetadataCategoryMapping, Bo
+
+Query: hibernate entity
+
+  Result 1:
+    file: /home/adarsh/code/booklore/booklore-api/src/main/java/org/booklore/model/entity/PdfAnnotationEntity.java
+    type: class_declaration
+    sig : @Entity
+@Getter
+@Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Table(name = "pdf_annotations")
+public class Pd
+
+  Result 2:
+    file: /home/adarsh/code/booklore/booklore-api/src/main/java/org/booklore/model/entity/AnnotationEntity.java
+    type: class_declaration
+    sig : @Entity
+@Getter
+@Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Table(name = "annotations")
+public class Annota
+
+  Result 3:
+    file: /home/adarsh/code/booklore/booklore-api/src/main/java/org/booklore/model/entity/KoboLibrarySnapshotEntity.java
+    type: class_declaration
+    sig : @Entity
+@Table(name = "kobo_library_snapshot")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public cl
+
+  Result 4:
+    file: /home/adarsh/code/booklore/booklore-api/src/main/java/org/booklore/model/entity/MoodEntity.java
+    type: class_declaration
+    sig : @Entity
+@Getter
+@Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Table(name = "mood")
+public class MoodEntity {
+
+
+  Result 5:
+    file: /home/adarsh/code/booklore/booklore-api/src/main/java/org/booklore/model/entity/AuthorEntity.java
+    type: class_declaration
+    sig : @Entity
+@Getter
+@Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Table(name = "author")
+public class AuthorEntit
+
+Query: rest api endpoint
+
+  Result 1:
+    file: /home/adarsh/code/booklore/booklore-api/src/main/java/org/booklore/service/metadata/parser/hardcover/HardcoverBookSearchService.java
+    type: method_declaration
+    sig : private <T> T executeRequest(GraphQLRequest body, Class<T> responseType, String apiToken)
+
+  Result 2:
+    file: /home/adarsh/code/booklore/booklore-api/src/main/java/org/booklore/crons/CronService.java
+    type: method_declaration
+    sig : protected boolean postData(String url, Object body)
+
+  Result 3:
+    file: /home/adarsh/code/booklore/booklore-api/src/main/java/org/booklore/service/hardcover/HardcoverSyncService.java
+    type: constructor_declaration
+    sig : @Autowired
+    public HardcoverSyncService(HardcoverSyncSettingsService hardcoverSyncSettingsService, BookRepository boo
+
+  Result 4:
+    file: /home/adarsh/code/booklore/booklore-api/src/main/java/org/booklore/service/VersionService.java
+    type: class_declaration
+    sig : @Slf4j
+@Service
+public class VersionService {
+
+    @Value("${app.version:unknown}")
+    String appVersion;
+
+    private 
+
+  Result 5:
+    file: /home/adarsh/code/booklore/booklore-api/src/main/java/org/booklore/controller/MobileOidcController.java
+    type: method_declaration
+    sig : private String discoverTokenEndpoint(String issuerUri) throws Exception
+
+Query: authentication service
+
+  Result 1:
+    file: /home/adarsh/code/booklore/booklore-api/src/main/java/org/booklore/service/book/BookMarkService.java
+    type: method_declaration
+    sig : private Long getCurrentUserId()
+
+  Result 2:
+    file: /home/adarsh/code/booklore/booklore-api/src/main/java/org/booklore/service/book/BookNoteV2Service.java
+    type: method_declaration
+    sig : private Long getCurrentUserId()
+
+  Result 3:
+    file: /home/adarsh/code/booklore/booklore-api/src/main/java/org/booklore/service/book/AnnotationService.java
+    type: method_declaration
+    sig : private Long getCurrentUserId()
+
+  Result 4:
+    file: /home/adarsh/code/booklore/booklore-api/src/main/java/org/booklore/service/book/PdfAnnotationService.java
+    type: method_declaration
+    sig : private Long getCurrentUserId()
+
+  Result 5:
+    file: /home/adarsh/code/booklore/booklore-api/src/main/java/org/booklore/service/ShelfService.java
+    type: method_declaration
+    sig : private Long getAuthenticatedUserId()
+
+Query: book repository save method
+
+  Result 1:
+    file: /home/adarsh/code/booklore/booklore-api/src/main/java/org/booklore/service/watcher/BookFilePersistenceService.java
+    type: method_declaration
+    sig : @Transactional
+    public void save(BookEntity book)
+
+  Result 2:
+    file: /home/adarsh/code/booklore/booklore-api/src/main/java/org/booklore/service/book/BookQueryService.java
+    type: method_declaration
+    sig : public void saveAll(List<BookEntity> books)
+
+  Result 3:
+    file: /home/adarsh/code/booklore/booklore-api/src/main/java/org/booklore/service/watcher/BookFilePersistenceService.java
+    type: method_declaration
+    sig : @Transactional
+    public void markBookAsDeleted(BookEntity book)
+
+  Result 4:
+    file: /home/adarsh/code/booklore/booklore-api/src/main/java/org/booklore/service/progress/ReadingProgressService.java
+    type: method_declaration
+    sig : private void saveToUserBookFileProgress(BookLoreUserEntity user, BookFileProgress fileProgress, Instant now)
+
+  Result 5:
+    file: /home/adarsh/code/booklore/booklore-api/src/main/java/org/booklore/service/book/BookFileAttachmentService.java
+    type: method_declaration
+    sig : private Book getUpdatedBook(Long bookId)
+
+Query: user login controller
+
+  Result 1:
+    file: /home/adarsh/code/booklore/booklore-api/src/main/java/org/booklore/config/security/service/AuthenticationService.java
+    type: method_declaration
+    sig : public ResponseEntity<Map<String, String>> loginUser(UserLoginRequest loginRequest)
+
+  Result 2:
+    file: /home/adarsh/code/booklore/booklore-api/src/main/java/org/booklore/config/security/SecurityUtil.java
+    type: method_declaration
+    sig : private BookLoreUser getCurrentUser()
+
+  Result 3:
+    file: /home/adarsh/code/booklore/booklore-api/src/main/java/org/booklore/service/ShelfService.java
+    type: method_declaration
+    sig : private Long getAuthenticatedUserId()
+
+  Result 4:
+    file: /home/adarsh/code/booklore/booklore-api/src/main/java/org/booklore/model/dto/request/UserLoginRequest.java
+    type: class_declaration
+    sig : @Data
+public class UserLoginRequest {
+    @NotBlank(message = "Username must not be blank")
+    private String username;
+
+  Result 5:
+    file: /home/adarsh/code/booklore/booklore-api/src/test/java/org/booklore/controller/KoreaderControllerTest.java
+    type: method_declaration
+    sig : @Test
+    void createUser_returnsForbiddenAndLogs()

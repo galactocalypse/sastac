@@ -1,168 +1,94 @@
-import os
-import sqlite3
+from __future__ import annotations
+
+import hashlib
 import time
 from pathlib import Path
-from typing import Iterator, Tuple
+from typing import List
 
-DB_PATH = "project_files.db"
+from sastac.fs.service import FileSystemService
+from sastac.storage.scopes.workspace_storage import WorkspaceStorage
 
-
-# -----------------------------
-# Language inference
-# -----------------------------
-EXTENSION_LANGUAGE_MAP = {
-    ".py": "python",
-    ".js": "javascript",
-    ".ts": "typescript",
-    ".java": "java",
-    ".go": "go",
-    ".rs": "rust",
-    ".cpp": "cpp",
-    ".c": "c",
-    ".h": "c",
-    ".html": "html",
-    ".css": "css",
-    ".json": "json",
-    ".md": "markdown",
-    ".sh": "shell",
-    ".yaml": "yaml",
-    ".yml": "yaml",
-    ".sql": "sql",
+ALLOWED_EXTENSIONS = {
+    ".py", ".js", ".ts", ".tsx", ".go", ".java"
 }
 
+SKIP_DIRS = {
+    ".git", "node_modules", "dist", "build",
+    "__pycache__", ".venv", ".idea", ".vscode"
+}
 
-def infer_language(path: Path) -> str:
-    return EXTENSION_LANGUAGE_MAP.get(path.suffix.lower(), "unknown")
-
-
-# -----------------------------
-# DB Setup
-# -----------------------------
-def get_connection(db_path: str = DB_PATH) -> sqlite3.Connection:
-    conn = sqlite3.connect(db_path)
-    conn.execute("PRAGMA journal_mode=WAL;")
-    return conn
+MAX_FILE_SIZE = 200_000
+MAX_FILES = 10_000
 
 
-def initialize_db(conn: sqlite3.Connection) -> None:
-    conn.execute("""
-        CREATE TABLE IF NOT EXISTS files (
-            project_id TEXT NOT NULL,
-            path TEXT NOT NULL,
-            language TEXT,
-            size INTEGER NOT NULL,
-            last_modified INTEGER NOT NULL,
-            PRIMARY KEY (project_id, path)
-        )
-    """)
-    conn.execute("""
-        CREATE INDEX IF NOT EXISTS idx_files_project
-        ON files (project_id)
-    """)
-    conn.commit()
+def file_hash(path: Path) -> str:
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        h.update(f.read())
+    return h.hexdigest()
 
 
-# -----------------------------
-# File scanning
-# -----------------------------
-def scan_project(
-    project_id: str,
-    root_path: str
-) -> Iterator[Tuple[str, str, str, int, int]]:
-    """
-    Yields:
-        (project_id, relative_path, language, size, last_modified)
-    """
-    root = Path(root_path)
-
-    for file_path in root.rglob("*"):
-        if not file_path.is_file():
-            continue
-
-        rel_path = file_path.relative_to(root).as_posix()
-        stat = file_path.stat()
-
-        yield (
-            project_id,
-            rel_path,
-            infer_language(file_path),
-            stat.st_size,
-            int(stat.st_mtime),
-        )
+def should_skip(path: Path) -> bool:
+    return any(p in SKIP_DIRS for p in path.parts)
 
 
-# -----------------------------
-# Rebuild project index
-# -----------------------------
-def rebuild_project(
-    conn: sqlite3.Connection,
-    project_id: str,
-    root_path: str
-) -> None:
-    """
-    Deletes all rows for project and rebuilds from filesystem.
-    """
-    with conn:
-        conn.execute("DELETE FROM files WHERE project_id = ?", (project_id,))
-        conn.executemany("""
-            INSERT INTO files (project_id, path, language, size, last_modified)
-            VALUES (?, ?, ?, ?, ?)
-        """, scan_project(project_id, root_path))
+def detect_language(path: Path) -> str | None:
+    ext = path.suffix.lower()
+    return {
+        ".py": "python",
+        ".js": "javascript",
+        ".ts": "typescript",
+        ".tsx": "tsx",
+        ".go": "go",
+        ".java": "java",
+    }.get(ext)
 
 
-# -----------------------------
-# Optional: incremental upsert
-# -----------------------------
-def upsert_files(
-    conn: sqlite3.Connection,
-    rows: Iterator[Tuple[str, str, str, int, int]]
-) -> None:
-    """
-    Uses SQLite UPSERT (requires SQLite >= 3.24).
-    """
-    with conn:
-        conn.executemany("""
-            INSERT INTO files (project_id, path, language, size, last_modified)
-            VALUES (?, ?, ?, ?, ?)
-            ON CONFLICT(project_id, path)
-            DO UPDATE SET
-                language=excluded.language,
-                size=excluded.size,
-                last_modified=excluded.last_modified
-        """, rows)
+class FileIndexer:
 
+    def __init__(self, storage: WorkspaceStorage):
+        self.storage = storage
 
-def clean_project(conn: sqlite3.Connection, project_id: str) -> None:
-    with conn:
-        conn.execute("DELETE FROM files WHERE project_id = ?", (project_id,))
+    def index(self, root: Path) -> List[Path]:
 
+        files = FileSystemService.list_files(root=root, recursive=True)
+        indexed: List[Path] = []
 
-def get_project_files(conn: sqlite3.Connection, project_id: str):
-    conn.row_factory = sqlite3.Row
+        for f in files:
 
-    cursor = conn.execute("""
-        SELECT *
-        FROM files
-        WHERE project_id = ?
-        ORDER BY path
-    """, (project_id,))
+            if len(indexed) >= MAX_FILES:
+                break
 
-    for row in cursor:
-        yield dict(row)
+            if should_skip(f):
+                continue
 
+            if f.suffix.lower() not in ALLOWED_EXTENSIONS:
+                continue
 
-# -----------------------------
-# Example usage
-# -----------------------------
-if __name__ == "__main__":
-    PROJECT_ID = "stocks"
-    ROOT_PATH = "/home/adarsh/code/booklore"
+            if f.stat().st_size > MAX_FILE_SIZE:
+                continue
 
-    conn = get_connection()
-    initialize_db(conn)
+            try:
+                h = file_hash(f)
+            except Exception:
+                continue
 
-    rebuild_project(conn, PROJECT_ID, ROOT_PATH)
+            key = f"file:{f}"
 
-    print("Project indexed successfully.")
-    for entry in get_project_files(conn, project_id="stocks"):
-        print(entry)
+            prev = self.storage.kv.get(key)
+            if prev and prev["hash"] == h:
+                indexed.append(f)
+                continue
+
+            self.storage.kv.set(key, {
+                "path": str(f),
+                "hash": h,
+                "size": f.stat().st_size,
+                "mtime": f.stat().st_mtime,
+                "language": detect_language(f),
+                "indexed_at": time.time(),
+            })
+
+            indexed.append(f)
+
+        return indexed

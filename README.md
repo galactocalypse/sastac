@@ -8,6 +8,10 @@ A coding assistant built for working with small (~7B) LLMs hosted locally.
 ## Setup
 
 ```bash
+# Embedding model
+ollama pull bge-m3
+```
+```bash
 uv pip install -e ".[dev]"
 ```
 
@@ -35,4 +39,19 @@ uv lock
 
 # Install packages from lock file
 uv sync --all-extras
+```
+
+## Verify indexing
+```bash
+# index a workspace
+python -m sastac.index_workspace booklore ~/code/booklore
+
+# verify the index
+python scripts/verify_workspace_index.py booklore > index_verification.txt
+
+# evaluate the index
+python scripts/diagnose_index.py booklore > diagnostic.txt
+
+# clear the index
+python scripts/clear_workspace_index.py booklore
 ```
