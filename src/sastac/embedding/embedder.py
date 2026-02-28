@@ -26,10 +26,16 @@ def embed(text: Union[str, List[str]]):
     else:
         input_texts = text
 
-    response = _client.embed(
-        model=_model,
-        input=input_texts
-    )
+    try:
+        print(f"Model: {_model}")
+        print(f"input: {input_texts}")
+        response = _client.embed(
+            model=_model,
+            input=input_texts
+        )
+    except Exception as e:
+        print(f"Error embedding text: {e}")
+        raise
 
     embeddings = response["embeddings"]
 

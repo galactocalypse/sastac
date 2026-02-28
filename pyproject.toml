@@ -31,8 +31,13 @@ dev = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-ra"
 asyncio_mode = "auto"
+markers = [
+    "integration: marks tests as integration tests (requires Ollama server + bge-m3 model)",
+]
+addopts = "-ra --strict-markers"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+
