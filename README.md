@@ -56,6 +56,10 @@ python scripts/diagnose_index.py booklore > diagnostic.txt
 python scripts/clear_workspace_index.py booklore
 ```
 
+### Running task workflow
+```bash
+python -m sastac.llm.workflow
+```
 
 ### System Requirements
 
