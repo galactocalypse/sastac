@@ -64,7 +64,7 @@ class WorkspaceIndexer:
 
     def __init__(self, workspace_id: str, base_dir: Path, embed_fn):
         self.storage = WorkspaceStorage(workspace_id, base_dir)
-        self.chunk_indexer = ChunkIndexer(self.storage, embed_fn)
+        self.chunk_indexer = ChunkIndexer(embed_fn)
 
     # ------------------------------------
     # Step 1: File metadata → SQLite
@@ -77,6 +77,9 @@ class WorkspaceIndexer:
         indexed = []
 
         for f in files:
+            
+            if "SecurityConfig.java" not in str(f):
+                continue
 
             if len(indexed) >= MAX_FILES:
                 print(f"Reached max files ({MAX_FILES})")
@@ -126,7 +129,11 @@ class WorkspaceIndexer:
     def index_chunks(self, files: List[Path]):
 
         print("Chunk indexing started")
-        self.chunk_indexer.index(files)
+        ids, vectors, metadata = self.chunk_indexer.index(files)
+        if ids:
+            self.storage.vector.upsert(ids, vectors, metadata)
+        else:
+            print("No chunks found to index")
 
 
     # ------------------------------------

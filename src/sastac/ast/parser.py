@@ -49,6 +49,6 @@ def get_parser(language: str) -> Parser:
     return parser
 
 
-def parse_code(language: str, source: str) -> Tree:
+def parse_code(language: str, source: bytes) -> Tree:
     parser = get_parser(language)
-    return parser.parse(source.encode("utf-8"))
+    return parser.parse(source)

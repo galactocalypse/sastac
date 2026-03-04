@@ -9,7 +9,7 @@ A coding assistant built for working with small (~7B) LLMs hosted locally.
 
 ```bash
 # Embedding model
-ollama pull bge-m3
+ollama pull nomic-embed-text
 ```
 ```bash
 uv pip install -e ".[dev]"
@@ -55,3 +55,14 @@ python scripts/diagnose_index.py booklore > diagnostic.txt
 # clear the index
 python scripts/clear_workspace_index.py booklore
 ```
+
+
+### System Requirements
+
+* OS: Ubuntu 24.04.2 LTS
+* CPU: 11th Gen Intel® Core™ i7-11800H × 16
+* Memory: 16 GB
+* GPU: NVIDIA GeForce RTX 3050 Laptop GPU (4GB VRAM)
+
+
+

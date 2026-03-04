@@ -7,6 +7,7 @@ from sastac.config.schema import SastacConfig
 from sastac.config.schema import (
     SastacConfig,
     EmbeddingConfig,
+    LLMConfig
 )
 
 
@@ -41,4 +42,4 @@ def load_config(workspace_root=None):
     if workspace_root:
         cfg = deep_merge(cfg, _read_yaml(workspace_root / ".sastac.yaml"))
 
-    return SastacConfig(embeddings=EmbeddingConfig(**cfg["embeddings"]))
+    return SastacConfig(embeddings=EmbeddingConfig(**cfg["embeddings"]), task_refiner=LLMConfig(**cfg["task_refiner"]), task_planner=LLMConfig(**cfg["task_planner"]))

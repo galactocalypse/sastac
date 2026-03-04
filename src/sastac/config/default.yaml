@@ -1,3 +1,9 @@
 embeddings:
-  model: bge-m3
-  vector_size: 1024
+  model: nomic-embed-text
+  vector_size: 768
+task_refiner:
+  model: qwen2.5-coder:3b-instruct
+  temperature: 0.1
+task_planner:
+  model: qwen2.5-coder:3b-instruct
+  temperature: 0.2

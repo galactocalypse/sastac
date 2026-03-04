@@ -1,11 +1,10 @@
 import argparse
-import random
 from pathlib import Path
-from collections import Counter, defaultdict
+from collections import Counter
 
-from sentence_transformers import SentenceTransformer
 from sastac.storage.scopes.workspace_storage import WorkspaceStorage
 from sastac.embedding.embedder import embed
+
 
 # -------------------------------------------------------
 # Helpers
@@ -17,16 +16,13 @@ def print_section(title):
     print("=" * 80)
 
 
-def is_vendor(path: str):
-    bad = ["vendor", "node_modules", "dist", "build", "assets/foliate"]
-    return any(x in path.lower() for x in bad)
-
-
-def is_backend(path: str):
-    p = path.lower()
-    return any(x in p for x in [
-        "backend", "server", "api", "spring", "repository", "service"
-    ])
+def extract_payload(hit):
+    """
+    Supports both flattened and nested vector store payloads.
+    """
+    if "payload" in hit:
+        return hit["payload"]
+    return hit
 
 
 # -------------------------------------------------------
@@ -35,89 +31,144 @@ def is_backend(path: str):
 
 def load_files(storage):
     keys = storage.kv.list("file:")
-    return {
-        storage.kv.get(k)["path"]: storage.kv.get(k)
-        for k in keys if storage.kv.get(k)
-    }
+    files = {}
+
+    for k in keys:
+        meta = storage.kv.get(k)
+        if meta and meta.get("path"):
+            files[meta["path"]] = meta
+
+    return files
 
 
 # -------------------------------------------------------
-# Load chunks (random sample)
+# Load chunks (sampled)
 # -------------------------------------------------------
 
 def load_chunks(storage, sample=2000):
-    vec = embed("sample text")
+    vec = embed("diagnostic probe")
     hits = storage.vector.query(vec, top_k=sample)
-    return hits
+    return [extract_payload(h) for h in hits]
 
 
 # -------------------------------------------------------
-# Diagnostics
+# FILE COVERAGE
 # -------------------------------------------------------
 
 def diagnose_files(files):
+
     print_section("FILE COVERAGE")
 
     print(f"Indexed files: {len(files)}")
 
-    langs = Counter(f["language"] for f in files.values())
+    langs = Counter(f.get("language") for f in files.values())
+    print("\nLanguage distribution:")
     for l, c in langs.most_common():
         print(f"  {l}: {c}")
 
-    backend = sum(1 for f in files if is_backend(f))
-    print(f"\nBackend files detected: {backend}")
+    if not langs:
+        print("❌ No languages detected → indexing failed.")
 
-    if backend == 0:
-        print("⚠️ Backend not detected → wrong root or language detection.")
 
+# -------------------------------------------------------
+# CHUNK COVERAGE
+# -------------------------------------------------------
 
 def diagnose_chunks(files, chunks):
+
     print_section("CHUNK COVERAGE")
 
-    per_file = Counter(c.get("file") for c in chunks)
-    vendor = sum(1 for c in chunks if is_vendor(c.get("file", "")))
-    backend = sum(1 for c in chunks if is_backend(c.get("file", "")))
+    per_file = Counter(c.get("file") for c in chunks if c.get("file"))
+    node_types = Counter(c.get("node_type") for c in chunks if c.get("node_type"))
+    tags = Counter(
+        tag
+        for c in chunks
+        for tag in (c.get("tags") or [])
+    )
 
-    print(f"Files with chunks: {len(per_file)}")
-    print(f"Backend chunk files: {backend}")
-    print(f"Vendor chunks: {vendor}/{len(chunks)}")
+    print(f"Files with chunks (sampled): {len(per_file)}")
+    print(f"Total sampled chunks: {len(chunks)}")
 
-    if len(per_file) < len(files) * 0.2:
-        print("⚠️ Too few files chunked → parser failing or filters too strict.")
+    coverage_ratio = len(per_file) / max(len(files), 1)
+    print(f"File-to-chunk coverage ratio: {coverage_ratio:.2f}")
 
-    print("\nTop chunked files:")
+    if coverage_ratio < 0.2:
+        print("⚠️ Low coverage → parser failing or filters too strict.")
+
+    print("\nTop chunked files (sampled):")
     for f, c in per_file.most_common(10):
         print(f"  {c:4}  {f}")
 
+    print("\nNode type distribution:")
+    for t, c in node_types.most_common():
+        print(f"  {t}: {c}")
+
+    if tags:
+        print("\nTag distribution:")
+        for t, c in tags.most_common():
+            print(f"  {t}: {c}")
+
+
+# -------------------------------------------------------
+# CHUNK SIZE ANALYSIS
+# -------------------------------------------------------
 
 def diagnose_chunk_sizes(chunks):
+
     print_section("CHUNK SIZE ANALYSIS")
 
     sizes = [
-        c.get("end_line", 0) - c.get("start_line", 0)
+        (c.get("end_line", 0) - c.get("start_line", 0))
         for c in chunks
-        if c.get("end_line") is not None
+        if c.get("start_line") is not None and c.get("end_line") is not None
     ]
 
     if not sizes:
-        print("No chunk size data.")
+        print("No chunk size data available.")
         return
 
-    print(f"Avg lines/chunk: {sum(sizes)/len(sizes):.1f}")
+    avg = sum(sizes) / len(sizes)
+    print(f"Avg lines/chunk: {avg:.1f}")
     print(f"Min lines/chunk: {min(sizes)}")
     print(f"Max lines/chunk: {max(sizes)}")
 
-    if min(sizes) > 20:
-        print("⚠️ Small functions missing → MIN_CHUNK_SIZE too big.")
+    if max(sizes) > 500:
+        print("⚠️ Large chunks detected → splitting may be insufficient.")
+
+    if min(sizes) == 0:
+        print("⚠️ Zero-length chunks present.")
 
 
-def diagnose_embeddings(storage):
+# -------------------------------------------------------
+# ANNOTATION PRESENCE
+# -------------------------------------------------------
+
+def diagnose_annotations(chunks):
+
+    print_section("ANNOTATION / METADATA PRESENCE")
+
+    class_ann = sum(1 for c in chunks if c.get("class_annotations"))
+    method_ann = sum(1 for c in chunks if c.get("method_annotations"))
+
+    print(f"Chunks with class annotations: {class_ann}")
+    print(f"Chunks with method annotations: {method_ann}")
+
+    if class_ann == 0:
+        print("⚠️ No class annotations detected → annotation extraction may be broken.")
+
+
+# -------------------------------------------------------
+# EMBEDDING DIVERSITY
+# -------------------------------------------------------
+
+def diagnose_embeddings():
+
     print_section("EMBEDDING DIVERSITY")
 
     vec1 = embed("database connection")
     vec2 = embed("user authentication")
 
-    diff = sum(abs(a-b) for a, b in zip(vec1, vec2))
+    diff = sum(abs(a - b) for a, b in zip(vec1, vec2))
 
     if diff == 0:
         print("❌ Embeddings identical → embedding model broken.")
@@ -125,15 +176,20 @@ def diagnose_embeddings(storage):
         print("Embeddings differ → OK.")
 
 
+# -------------------------------------------------------
+# SEMANTIC RETRIEVAL
+# -------------------------------------------------------
+
 def diagnose_retrieval(storage):
+
     print_section("SEMANTIC RETRIEVAL")
 
     queries = [
-        "spring controller",
-        "database repository",
-        "hibernate entity",
-        "rest api endpoint",
-        "authentication service",
+        "controller class",
+        "repository interface",
+        "entity model",
+        "authentication logic",
+        "api endpoint",
     ]
 
     for q in queries:
@@ -141,48 +197,22 @@ def diagnose_retrieval(storage):
         hits = storage.vector.query(vec, top_k=5)
 
         print(f"\nQuery: {q}")
+
+        if not hits:
+            print("  No results")
+            continue
+
         for h in hits:
-            print(" ", h.get("file"))
-
-
-def diagnose_booklore_specific(files):
-    print_section("BOOKLORE CHECKS")
-
-    backend = [
-        f for f in files
-        if any(x in f.lower() for x in [
-            "booklore-api",
-            "/src/main/java/",
-            "/src/test/java/",
-            "/repository/",
-            "/service/",
-            "/controller/",
-            "/model/entity/",
-        ])
-    ]
-
-    ui = [
-        f for f in files
-        if any(x in f.lower() for x in [
-            "booklore-ui",
-            "/src/app/",
-            ".tsx",
-            ".ts"
-        ])
-    ]
-
-    print(f"Backend files indexed: {len(backend)}")
-    print(f"UI files indexed: {len(ui)}")
-
-    if len(backend) == 0:
-        print("⚠️ Backend missing → wrong root path.")
+            p = extract_payload(h)
+            print(" ", p.get("file"), "|", p.get("node_type"))
 
 
 # -------------------------------------------------------
-# Main
+# MAIN
 # -------------------------------------------------------
 
 def main():
+
     parser = argparse.ArgumentParser()
     parser.add_argument("workspace_id")
     parser.add_argument("--storage", default="~/.sastac")
@@ -199,9 +229,9 @@ def main():
     diagnose_files(files)
     diagnose_chunks(files, chunks)
     diagnose_chunk_sizes(chunks)
-    diagnose_embeddings(storage)
+    diagnose_annotations(chunks)
+    diagnose_embeddings()
     diagnose_retrieval(storage)
-    diagnose_booklore_specific(files)
 
 
 if __name__ == "__main__":

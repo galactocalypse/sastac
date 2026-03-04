@@ -5,7 +5,7 @@ from tree_sitter import Node, Tree
 
 from sastac.ast.parser import parse_code
 from sastac.ast.parser import TOP_LEVEL_NODE_TYPES
-
+import sastac.ast.extractors.default as ext
 
 # -----------------------------
 # Data Model
@@ -38,77 +38,13 @@ class CodeChunk:
 
 
 # -----------------------------
-# Utilities
-# -----------------------------
-
-def _node_text(node: Node, source: str) -> str:
-    return source[node.start_byte : node.end_byte]
-
-
-def _extract_identifier(node: Node) -> Optional[str]:
-    """
-    Attempt to extract identifier/name across grammars.
-    """
-    for child in node.children:
-        if child.type in {"identifier", "name"}:
-            return child.text.decode("utf-8")
-    return None
-
-
-def _extract_docstring(node: Node, language: str, source: str) -> Optional[str]:
-    """
-    Very lightweight docstring extraction.
-    Python: first string literal inside block.
-    Others: left for extension.
-    """
-    if language == "python":
-        for child in node.children:
-            if child.type == "block":
-                for stmt in child.children:
-                    if stmt.type == "expression_statement":
-                        for expr_child in stmt.children:
-                            if expr_child.type == "string":
-                                return _node_text(expr_child, source)
-    return None
-
-
-def _extract_annotations(node: Node, source: str) -> list[str]:
-    anns = []
-
-    for child in node.children:
-        # Java tree-sitter uses these
-        if child.type in {"annotation", "marker_annotation"}:
-            anns.append(source[child.start_byte:child.end_byte])
-
-    return anns
-
-
-def _extract_signature(node: Node, source: str) -> str:
-    """
-    Extract header portion (everything before block/body if present).
-    """
-    for child in node.children:
-        if child.type in {"block", "statement_block"}:
-            return source[node.start_byte : child.start_byte].strip()
-    return _node_text(node, source)
-
-
-def _extract_package(root: Node, source: str) -> Optional[str]:
-    for child in root.children:
-        if child.type == "package_declaration":
-            text = source[child.start_byte:child.end_byte]
-            return text.replace("package", "").replace(";", "").strip()
-    return None
-
-
-# -----------------------------
 # Recursive Traversal
 # -----------------------------
 
 def _collect_nodes_recursive(
     node: Node,
     language: str,
-    source: str,
+    source: bytes,
     allowed_types: set,
     parent_name: Optional[str] = None,
     depth: int = 0,
@@ -120,6 +56,9 @@ def _collect_nodes_recursive(
     chunks: List[CodeChunk] = []
 
     current_name = parent_name
+
+    if node.type not in allowed_types:
+        print(f"Skipping node type: {node.type}")
 
     if node.type in allowed_types:
         name = _extract_identifier(node)
@@ -178,7 +117,7 @@ def _collect_nodes_recursive(
 # Public API
 # -----------------------------
 
-def extract_code_chunks(language: str, source: str) -> List[CodeChunk]:
+def extract_code_chunks(language: str, source: bytes) -> List[CodeChunk]:
     """
     Parse source and recursively extract structural definitions.
 

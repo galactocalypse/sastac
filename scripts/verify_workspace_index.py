@@ -2,7 +2,6 @@ import argparse
 from pathlib import Path
 from collections import Counter
 
-from sentence_transformers import SentenceTransformer
 from sastac.storage.scopes.workspace_storage import WorkspaceStorage
 from sastac.embedding.embedder import embed
 
@@ -17,6 +16,15 @@ def print_header(title):
     print("=" * 70)
 
 
+def extract_payload(hit):
+    """
+    Handles both flattened and nested payload structures.
+    """
+    if "payload" in hit:
+        return hit["payload"]
+    return hit
+
+
 # -------------------------------------------
 # Metadata Checks
 # -------------------------------------------
@@ -29,29 +37,16 @@ def check_metadata(storage):
     print(f"Indexed files: {len(keys)}")
 
     langs = Counter()
-    backend = 0
-    ui = 0
 
-    for k in keys[:1000]:
+    for k in keys:
         meta = storage.kv.get(k)
         if not meta:
             continue
-
         langs[meta.get("language")] += 1
-
-        path = meta.get("path", "")
-        if "booklore-backend" in path:
-            backend += 1
-        if "booklore-ui" in path:
-            ui += 1
 
     print("\nLanguages:")
     for lang, count in langs.most_common():
         print(f"  {lang}: {count}")
-
-    print("\nBooklore split:")
-    print(f"  backend files: {backend}")
-    print(f"  ui files     : {ui}")
 
 
 # -------------------------------------------
@@ -63,14 +58,16 @@ def check_vectors(storage):
     print_header("VECTOR INDEX")
 
     dummy = embed("hello world")
-    hits = storage.vector.query(dummy, top_k=20)
+    hits = storage.vector.query(dummy, top_k=10)
 
     print(f"Sample vector hits: {len(hits)}")
 
     if hits:
+        payload = extract_payload(hits[0])
+
         print("\nExample payload:")
-        for k, v in hits[0].items():
-            print(f"  {k}: {str(v)[:80]}")
+        for k, v in payload.items():
+            print(f"  {k}: {str(v)[:100]}")
 
 
 # -------------------------------------------
@@ -81,24 +78,29 @@ def chunk_distribution(storage):
 
     print_header("CHUNK DISTRIBUTION")
 
-    dummy = embed("test")
-    hits = storage.vector.query(dummy, top_k=500)
+    # Instead of semantic query, fetch many random-ish hits
+    dummy = embed("code")
+    hits = storage.vector.query(dummy, top_k=1000)
 
     per_file = Counter()
-    backend = Counter()
+    node_types = Counter()
 
     for h in hits:
-        f = h.get("file")
+        payload = extract_payload(h)
+
+        f = payload.get("file")
         per_file[f] += 1
-        if "booklore-backend" in str(f):
-            backend[f] += 1
+        node_types[payload.get("node_type")] += 1
 
-    print(f"Files with chunks: {len(per_file)}")
-    print(f"Backend files with chunks: {len(backend)}")
+    print(f"Files with chunks (sampled): {len(per_file)}")
 
-    print("\nTop backend files:")
-    for f, c in backend.most_common(10):
+    print("\nTop files (sampled):")
+    for f, c in per_file.most_common(10):
         print(f"  {f}: {c}")
+
+    print("\nNode type distribution (sampled):")
+    for t, c in node_types.most_common():
+        print(f"  {t}: {c}")
 
 
 # -------------------------------------------
@@ -110,7 +112,6 @@ def retrieval_test(storage):
     print_header("SEMANTIC RETRIEVAL")
 
     queries = [
-        # Backend-focused
         "spring controller",
         "database repository",
         "hibernate entity",
@@ -131,10 +132,13 @@ def retrieval_test(storage):
             continue
 
         for i, h in enumerate(hits, 1):
+            payload = extract_payload(h)
+
             print(f"\n  Result {i}:")
-            print(f"    file: {h.get('file')}")
-            print(f"    type: {h.get('node_type')}")
-            print(f"    sig : {str(h.get('signature'))[:120]}")
+            print(f"    file: {payload.get('file')}")
+            print(f"    type: {payload.get('node_type')}")
+            print(f"    tags: {payload.get('tags')}")
+            print(f"    signature: {str(payload.get('signature'))[:120]}")
 
 
 # -------------------------------------------
