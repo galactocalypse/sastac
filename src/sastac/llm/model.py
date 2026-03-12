@@ -1,5 +1,5 @@
 import ollama
-from sastac.config.loader import load_config
+from sastac.config.loader import ConfigService
 import time
 from dataclasses import dataclass
 
@@ -11,20 +11,12 @@ class LLMInvocation:
     duration_seconds: float
 
 
-def read_file(path):
-    with open(path, "r") as f:
-        return f.read()
-
-def write_file(path, content):
-    with open(path, "w") as f:
-        f.write(content)
-
-cfg = load_config()
+cfg = ConfigService.load()
 
 
 messages: list[dict[str, str]] = []
 
-def generate(prompt: str, prediction_length = 400) -> LLMInvocation:
+def generate(prompt: str, prediction_length = 400, format: str | dict[str, object] = "json") -> LLMInvocation:
     start = time.time()
     response = ollama.generate(
         model=cfg.task_refiner.model,
@@ -32,6 +24,7 @@ def generate(prompt: str, prediction_length = 400) -> LLMInvocation:
         options={
             "temperature": cfg.task_refiner.temperature,
             "num_predict": 800,
+            "format": format
         }
     )
     end = time.time()

@@ -1,11 +1,14 @@
 import json
 import time
 from dataclasses import dataclass
-from .model import read_file, generate
-from .context import ProjectContext, WorkspaceContext, ChatContext
+from typing import Optional
+from sastac.llm.model import generate
+from sastac.util.service import PackageDataService
+from sastac.context.context import ProjectContext, WorkspaceContext, ChatContext
+from sastac.util.service import InternalFileService
+from sastac.util.logger import logger
 
-
-refiner_prompt = read_file("src/sastac/llm/refinement_prompt.txt")
+refiner_prompt = PackageDataService.read_text("sastac.files", "refinement_prompt.txt")
 
 @dataclass
 class RefineTaskRequest:
@@ -17,28 +20,47 @@ class RefineTaskRequest:
 @dataclass
 class RefinedTask:
     intent: str
-    requires_tools: bool
     task: str
-    constraints: list[str]
-    assumptions: list[str]
-    requires_clarification: bool
+    monitoring: Optional[dict[str, float | str]] = None
     
-def refine_task(refinement_task: RefineTaskRequest) -> RefinedTask:
+def refine_task(request: RefineTaskRequest) -> RefinedTask:
 
     start = time.time()
+    InternalFileService.write_file("refiner/input.log", request.user_input)
     prompt = refiner_prompt \
-        .replace("{chat_summary}", refinement_task.chat_context.summary) \
-        .replace("{task}", refinement_task.user_input) \
-        .replace("{project}", refinement_task.project_context.description) \
-        .replace("{files}", refinement_task.workspace_context.file_listing)
+        .replace("{chat_summary}", request.chat_context.summary or "-") \
+        .replace("{task}", request.user_input) \
+        .replace("{project_instructions}", request.project_context.system_instructions) \
+        .replace("{project}", request.project_context.project_readme) \
+        .replace("{files}", request.workspace_context.file_listing)
     
+    InternalFileService.write_file("refiner/prompt.log", prompt)
     prediction_length = 100
-    task_length = len(refinement_task.user_input.split(" "))
+    task_length = len(request.user_input.split(" "))
     if task_length > 200:
         prediction_length = 500
 
-    response = generate(prompt, prediction_length)
-    
+    response = generate(prompt, prediction_length, format={
+        "type": "object",
+        "properties": {
+            "intent": {
+                "type": "string",
+                "enum": ["conceptual", "analysis", "workspace_mutation"]
+            },
+            "task": {
+                "type": "string"
+            }
+        }})
+    InternalFileService.write_file("refiner/response.log", response.response)
     end = time.time()
-    print(f"Refiner duration: {end-start}s.")
-    return RefinedTask(**json.loads(response.response))
+    response_data = json.loads(response.response)
+    if "monitoring" not in response_data:
+        response_data["monitoring"] = {}
+    
+    refined_task = RefinedTask(**response_data)
+    
+    if refined_task.monitoring is None:
+        refined_task.monitoring = {}
+        
+    refined_task.monitoring["duration"] = end - start
+    return refined_task

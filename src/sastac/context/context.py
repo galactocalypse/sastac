@@ -1,38 +1,40 @@
 from pathlib import Path
 from typing import Iterable
 from dataclasses import dataclass
-from .model import read_file
-from sastac.fs.service import FileSystemService
+from sastac.util.service import FileSystemService, PackageDataService
 
 
 @dataclass
 class ProjectContext:
-    description: str
+    base_directory: str
+    system_instructions: str | None
+    project_readme: str | None
+
 
 @dataclass
 class WorkspaceContext:
     files: list[Path]
     file_listing: str
 
+
 @dataclass
 class ChatContext:
     messages: list[dict[str, str]]
     summary: str
 
-base_chat_prompt = read_file("src/sastac/llm/chat_prompt.txt")
+
+@dataclass
+class SessionContext:
+    project_id: str
+    project_context: ProjectContext
+
+
+base_chat_prompt = PackageDataService.read_text("sastac.files", "chat_prompt.txt")
 messages: list[dict[str, str]] = [{
     "role": "system",
     "content": base_chat_prompt
 }]
 
-
-def get_project_context() -> ProjectContext:
-    return ProjectContext("""
-        Sastac (Sasta ClaudeCode)
-        This project implements an AI coding assistant in Python.
-        It uses tree-sitter for AST parsing, ollama for accessing LLM and embedding models,
-        qdrant for vector DB, and sqlite for other storage.
-        """)
 
 def get_workspace_context(
     path: Path,
@@ -52,6 +54,6 @@ def get_workspace_context(
 
 
 def get_chat_context() -> ChatContext:
-    chat_summary = "\n".join([f"{message["role"]}: {message["content"]}" for message in messages])
-    return ChatContext(messages, chat_summary)
+    chat_summary = "\n".join([f"{message["role"]}: {message["content"]}" for message in messages if message["role"] != "system"])
+    return ChatContext(messages[1:], chat_summary)
 

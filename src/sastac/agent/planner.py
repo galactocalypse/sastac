@@ -1,5 +1,5 @@
 import ollama
-from sastac.config.loader import load_config
+from sastac.config.loader import ConfigService
 import json
 import time
 from pathlib import Path
@@ -7,10 +7,11 @@ from typing import Iterable
 from dataclasses import dataclass, asdict
 from typing import Optional
 from .refiner import refine_task, RefineTaskRequest, RefinedTask
-from .model import read_file, generate, write_file
-from .context import ProjectContext, WorkspaceContext
+from sastac.llm.model import generate
+from sastac.util.service import PackageDataService, InternalFileService
+from sastac.context.context import ProjectContext, WorkspaceContext
 
-planner_prompt = read_file("src/sastac/llm/planning_prompt.txt")
+planner_prompt = PackageDataService.read_text("sastac.files", "planning_prompt.txt")
 
 @dataclass
 class PlanningRequest:
@@ -24,22 +25,88 @@ class PlannedTask:
 
 def plan_task(planning_request: PlanningRequest) -> PlannedTask:
     start = time.time()
+    InternalFileService.write_file("planner/input.log", planning_request.task.task)
     prompt = planner_prompt \
         .replace("{task}", planning_request.task.task) \
-        .replace("{constraints}", "\n - ".join(planning_request.task.constraints)) \
         .replace("{files}", planning_request.workspace_context.file_listing) \
-        .replace("{project}", planning_request.project_context.description)
+        .replace("{project}", planning_request.project_context.project_readme) \
+        .replace("{project_instructions}", planning_request.project_context.system_instructions)
 
-    response = generate(prompt)
+    InternalFileService.write_file("planner/prompt.log", prompt)
+    response = generate(prompt, format={
+        "type": "object",
+        "properties": {
+            "detailed_description": {
+                "type": "string"
+            },
+            "relevant_files": {
+                "type": "array",
+                "items": {
+                    "type": "string"
+                }
+            },
+            "relevant_modules": {
+                "type": "object",
+                "patternProperties": {
+                    "^\[a-zA-Z0-9_]+\.\[a-zA-Z0-9_]+$": {
+                        "type": "object",
+                        "properties": {
+                            "relevance_reason": {
+                                "type": "string"
+                            },
+                            "files": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "required": [
+                            "relevance_reason",
+                            "files"
+                        ]
+                    }
+                },
+                "additionalProperties": False
+            },
+            "steps": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "module": {
+                            "type": "string"
+                        },
+                        "file": {
+                            "type": "string"
+                        },
+                        "file_relevance": {
+                            "type": "string"
+                        },
+                        "description": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "module",
+                        "file",
+                        "file_relevance",
+                        "description"
+                    ]
+                }
+            }
+        },
+        "required": [
+            "detailed_description",
+            "relevant_files",
+            "relevant_modules",
+            "steps"
+        ]
+    })
+    InternalFileService.write_file("planner/response.log", response.response)
     log = f"""
 Input
-Requires clarification: {planning_request.task.requires_clarification}
-Requires tools: {planning_request.task.requires_tools}
 Task: {planning_request.task.task}
-Constraints:
-{"\n - ".join(planning_request.task.constraints) or "No additional constraints"}
-Assumptions:
-{"\n - ".join(planning_request.task.assumptions) or "No assumptions"}
 
 Prompt:
 {prompt}
@@ -47,6 +114,6 @@ Prompt:
 Output
 {response.response}
     """
-    write_file("logs/plan.log", log)
+
     end = time.time()
     return PlannedTask(response.response)

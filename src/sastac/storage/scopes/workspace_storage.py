@@ -3,7 +3,7 @@
 from pathlib import Path
 from sastac.storage.backends.sqlite_kv import SQLiteKVStore
 from sastac.storage.backends.qdrant_vector import QdrantVectorStore
-from sastac.config.loader import load_config
+from sastac.config.loader import ConfigService
 
 
 class WorkspaceStorage:
@@ -13,7 +13,7 @@ class WorkspaceStorage:
         root.mkdir(parents=True, exist_ok=True)
 
         self.kv = SQLiteKVStore(root / "meta.db")
-        cfg = load_config()
+        cfg = ConfigService.load()
 
         self.vector = QdrantVectorStore(
             collection=f"ws_{workspace_id}",

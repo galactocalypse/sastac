@@ -1,4 +1,5 @@
 from pathlib import Path
+from sastac.util.logger import logger
 
 CODE_EXTENSIONS = {".py", ".java", ".go", ".rs", ".js", ".ts", ".tsx"}
 
@@ -15,4 +16,4 @@ def get_file_inventory(source_dir):
 def preprocess(root):
     files = scan_repo(root)
     for file in files:
-        print(file)
+        logger.info(file)

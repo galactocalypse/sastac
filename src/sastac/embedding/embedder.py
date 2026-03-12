@@ -1,8 +1,9 @@
 import ollama
 from typing import Union, List
-from sastac.config.loader import load_config
+from sastac.config.loader import ConfigService
+from sastac.util.logger import logger
 
-cfg = load_config()
+cfg = ConfigService.load()
 _model = cfg.embeddings.model
 
 # Optional: create a persistent client (slightly faster for many calls)
@@ -26,9 +27,9 @@ def embed(text: Union[str, List[str]]):
             input=input_texts
         )
     except Exception as e:
-        print(f"Model: {_model}")
-        print(f"input: {input_texts}")
-        print(f"Error embedding text: {e}")
+        logger.error(f"Model: {_model}")
+        logger.error(f"input: {input_texts}")
+        logger.error(f"Error embedding text: {e}")
         raise
 
     embeddings = response["embeddings"]

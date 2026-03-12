@@ -2,7 +2,8 @@ import yaml
 from pathlib import Path
 import importlib.resources as resources
 
-from sastac.config.loader import load_config
+from sastac.config.loader import ConfigService
+from sastac.util.service import PackageDataService
 import sastac.config.loader as loader
 
 
@@ -28,11 +29,11 @@ def test_load_default_config_only(tmp_path, monkeypatch):
         "storage": {"qdrant_path": "/tmp/qdrant"},
     }
 
-    monkeypatch.setattr(loader, "files", lambda pkg: tmp_path)
+    monkeypatch.setattr(PackageDataService, "read_text", lambda pkg, name: (tmp_path / name).read_text())
 
     write_yaml(tmp_path / "default.yaml", fake_default)
 
-    cfg = load_config()
+    cfg = ConfigService.load()
 
     assert cfg.embeddings.model == "test-model"
     assert cfg.embeddings.vector_size == 111
@@ -48,7 +49,7 @@ def test_user_override(tmp_path, monkeypatch):
         "storage": {"qdrant_path": "/tmp/qdrant"},
     }
 
-    monkeypatch.setattr(loader, "files", lambda pkg: tmp_path)
+    monkeypatch.setattr(PackageDataService, "read_text", lambda pkg, name: (tmp_path / name).read_text())
     write_yaml(tmp_path / "default.yaml", fake_default)
 
     fake_home = tmp_path / "home"
@@ -59,7 +60,7 @@ def test_user_override(tmp_path, monkeypatch):
         {"embeddings": {"vector_size": 999}},
     )
 
-    cfg = load_config()
+    cfg = ConfigService.load()
 
     assert cfg.embeddings.model == "default"
     assert cfg.embeddings.vector_size == 999
@@ -75,7 +76,7 @@ def test_workspace_override(tmp_path, monkeypatch):
         "storage": {"qdrant_path": "/tmp/qdrant"},
     }
 
-    monkeypatch.setattr(loader, "files", lambda pkg: tmp_path)
+    monkeypatch.setattr(PackageDataService, "read_text", lambda pkg, name: (tmp_path / name).read_text())
     write_yaml(tmp_path / "default.yaml", fake_default)
 
     fake_home = tmp_path / "home"
@@ -92,7 +93,7 @@ def test_workspace_override(tmp_path, monkeypatch):
         {"embeddings": {"vector_size": 1024}},
     )
 
-    cfg = load_config(workspace)
+    cfg = ConfigService.load(workspace)
 
     assert cfg.embeddings.vector_size == 1024
 
@@ -107,12 +108,12 @@ def test_missing_files(tmp_path, monkeypatch):
         "storage": {"qdrant_path": "/tmp/qdrant"},
     }
 
-    monkeypatch.setattr(loader, "files", lambda pkg: tmp_path)
+    monkeypatch.setattr(PackageDataService, "read_text", lambda pkg, name: (tmp_path / name).read_text())
     write_yaml(tmp_path / "default.yaml", fake_default)
 
     fake_home = tmp_path / "home"
     monkeypatch.setattr(Path, "home", lambda: fake_home)
 
-    cfg = load_config(tmp_path / "workspace")
+    cfg = ConfigService.load(tmp_path / "workspace")
 
     assert cfg.embeddings.vector_size == 1024

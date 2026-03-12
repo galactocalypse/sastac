@@ -8,6 +8,8 @@ from typing import List
 from sastac.util.service import FileSystemService
 from sastac.storage.scopes.workspace_storage import WorkspaceStorage
 from sastac.ast.chunk_indexer import ChunkIndexer
+from sastac.context.file_indexer import FileIndexer
+from sastac.util.logger import logger
 
 
 # -------------------------------------------------------
@@ -79,7 +81,7 @@ class WorkspaceIndexer:
         for f in files:
 
             if len(indexed) >= MAX_FILES:
-                print(f"Reached max files ({MAX_FILES})")
+                logger.info(f"Reached max files ({MAX_FILES})")
                 break
 
             if should_skip(f):
@@ -115,7 +117,7 @@ class WorkspaceIndexer:
             self.storage.kv.set(key, metadata)
             indexed.append(f)
 
-        print(f"Indexed metadata for {len(indexed)} files")
+        logger.info(f"Indexed metadata for {len(indexed)} files")
         return indexed
 
 
@@ -125,7 +127,7 @@ class WorkspaceIndexer:
 
     def index_chunks(self, files: List[Path]):
 
-        print("Chunk indexing started")
+        logger.info("Chunk indexing started")
         self.chunk_indexer.index(files)
 
 
@@ -135,9 +137,9 @@ class WorkspaceIndexer:
 
     def build(self, root: Path):
 
-        print(f"Indexing workspace at {root}")
+        logger.info(f"Indexing workspace at {root}")
 
         files = self.index_files(root)
         self.index_chunks(files)
 
-        print("Workspace indexing complete")
+        logger.info("Workspace indexing complete")

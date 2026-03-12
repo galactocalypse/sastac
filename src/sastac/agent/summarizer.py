@@ -1,5 +1,5 @@
 import ollama
-from sastac.config.loader import load_config
+from sastac.config.loader import ConfigService
 import json
 import time
 from pathlib import Path
@@ -7,8 +7,8 @@ from typing import Iterable
 from dataclasses import dataclass, asdict
 from typing import Optional
 from .refiner import RefinedTask
-from .context import ChatContext, ProjectContext, WorkspaceContext
-from .model import get_chat_response, send_message
+from sastac.context.context import ChatContext, ProjectContext, WorkspaceContext
+from sastac.llm.model import get_chat_response, send_message
 
 
 
