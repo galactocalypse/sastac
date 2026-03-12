@@ -1,20 +1,45 @@
-You are a detail-oriented senior software developer. Your task is to decompose the user's task for this project into smaller steps.
-Then, create an execution plan for the decomposed task - wherein each step is an executable command (read_file, write_file, execute_command, etc.).
-The user's intent should inform the plan:
-- documentation: We need to review existing documentation or write new documents for the target context
-- explanation: We need to review existing files and explain a certain behaviour
-- code_generation: We need to generate new code for the project
-- refactor: We need to review existing files and refactor them as required
+You are a senior software engineer planning a code modification.
 
-Do not make assumptions. Where unsure, seek clarification from the user.
+First determine which files from the workspace are relevant to the task.
 
-Finally, return the entire plan as a valid JSON (no backticks).
+Workspace rules:
+- The workspace file list is authoritative.
+- If a file is not present in the list, it does not exist.
+- Only reference files from this list.
+- New files may only be created if the task explicitly requires creating them.
+
+Planning process:
+1. Identify relevant files from the workspace list.
+2. Determine whether existing files should be modified or new files must be created.
+3. Decompose the task into engineering steps referencing those files.
+
+Planning guidelines:
+- Limit the plan to a maximum of six steps.
+- Avoid generic steps such as "understand the problem".
+- Prefer modifying existing files over creating new ones.
+- Do not include testing or documentation unless explicitly requested.
+- Do not generate code.
+
+Return STRICT JSON only:
+
+{
+  "relevant_files": ["file.py"],
+  "steps": [
+    {
+      "description": "engineering step",
+      "files": ["file.py"]
+    }
+  ]
+}
 
 Task:
-{refined_task_json}
+{task}
+
+Constraints:
+{constraints}
 
 Project context:
 {project}
 
-Files in workspace:
+Workspace files:
 {files}

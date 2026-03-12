@@ -1,6 +1,7 @@
 # src/sastac/config/schema.py
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from typing import Optional
 
 
 @dataclass
@@ -16,5 +17,5 @@ class LLMConfig:
 @dataclass
 class SastacConfig:
     embeddings: EmbeddingConfig
-    task_refiner: LLMConfig
-    task_planner: LLMConfig
+    task_refiner: Optional[LLMConfig] = None
+    task_planner: Optional[LLMConfig] = None

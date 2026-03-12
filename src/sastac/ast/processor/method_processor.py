@@ -1,17 +1,9 @@
-from dataclasses import dataclass, asdict
-from tree_sitter import Parser, Language, Tree
-from sastac.ast.parser import parse_code
-from sastac.ast.parser import TOP_LEVEL_NODE_TYPES
-from typing import List, Optional
+from typing import Optional
 import sastac.ast.extractors.default as ext
-from tree_sitter import Node, Tree
+from tree_sitter import Node
 import hashlib
-from pathlib import Path
-import json
 from sastac.ast.models.symbol import StructuralSymbol
 from sastac.ast.models.file_meta import FileMetadata
-from sastac.ast.processor.class_processor import process_class_type
-from sastac.ast.processor.file_processor import get_file_meta
 
 
 def process_method_declaration(
@@ -159,12 +151,20 @@ def process_method_declaration(
         "docstring": docstring,
     }
 
+    symbol_path = method_name
+    if parent_class_name:
+        symbol_path = parent_class_name + "." + symbol_path
+        if file_meta.package:
+            symbol_path = file_meta.package + "." + symbol_path
+
     return StructuralSymbol(
         id=symbol_id,
         type="method",
         start_line=node.start_point[0] + 1,
         end_line=node.end_point[0] + 1,
         name=method_name,
+        symbol_path=symbol_path,
+        file_path=file_meta.file_path,
         parent_id=parent_class_id,
         body=body,
         metadata=metadata,

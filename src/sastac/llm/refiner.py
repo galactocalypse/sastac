@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from .model import read_file, generate
 from .context import ProjectContext, WorkspaceContext, ChatContext
 
+
 refiner_prompt = read_file("src/sastac/llm/refinement_prompt.txt")
 
 @dataclass

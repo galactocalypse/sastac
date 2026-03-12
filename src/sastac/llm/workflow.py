@@ -35,7 +35,7 @@ def process_task(user_input: str) -> TaskResponse:
         refined_task = refine_task(refining_request)
         
         # Route
-        if refined_task.requires_tools:
+        if refined_task.intent == "workspace_mutation":
             # Plan
             planning_request = PlanningRequest(refined_task, project_context, workspace_context)
             planned_task = plan_task(planning_request)
@@ -44,10 +44,13 @@ def process_task(user_input: str) -> TaskResponse:
             exection_plan_request = ExecutionPlanRequest(planned_task, project_context, workspace_context)
             task_response.execution_plan = generate_execution_plan(exection_plan_request)
             
-        else:
+        elif refined_task.intent == "conceptual":
             # Respond
             chat_query = ChatQuery(refined_task, project_context, workspace_context)
             task_response.chat_response = summarize(chat_query)
+
+        elif refined_task.intent == "analysis":
+            raise Exception("Code analysis is currently not supported")
 
         # apply tool_calls
         # validate
@@ -57,6 +60,7 @@ def process_task(user_input: str) -> TaskResponse:
     
 
 if __name__ == "__main__":
+    initialize_chat()
     task_response = process_task("Implement a file chunking module")
     if task_response.chat_response:
         write_file("response.txt", task_response.chat_response.response)

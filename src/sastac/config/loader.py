@@ -42,4 +42,11 @@ def load_config(workspace_root=None):
     if workspace_root:
         cfg = deep_merge(cfg, _read_yaml(workspace_root / ".sastac.yaml"))
 
-    return SastacConfig(embeddings=EmbeddingConfig(**cfg["embeddings"]), task_refiner=LLMConfig(**cfg["task_refiner"]), task_planner=LLMConfig(**cfg["task_planner"]))
+    task_refiner_cfg = cfg.get("task_refiner")
+    task_planner_cfg = cfg.get("task_planner")
+
+    return SastacConfig(
+        embeddings=EmbeddingConfig(**cfg["embeddings"]),
+        task_refiner=LLMConfig(**task_refiner_cfg) if task_refiner_cfg else None,
+        task_planner=LLMConfig(**task_planner_cfg) if task_planner_cfg else None,
+    )

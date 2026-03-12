@@ -11,15 +11,6 @@ class LLMInvocation:
     duration_seconds: float
 
 
-@dataclass
-class PhaseResponse:
-    name: str
-    llm_response: LLMInvocation
-    task: dict[str, str]
-    result: dict[str, object]
-    duration_seconds: float
-
-
 def read_file(path):
     with open(path, "r") as f:
         return f.read()
@@ -29,10 +20,7 @@ def write_file(path, content):
         f.write(content)
 
 cfg = load_config()
-base_chat_prompt = read_file("src/sastac/llm/chat_prompt.txt")
-refiner_prompt = read_file("src/sastac/llm/refinement_prompt.txt")
-planner_prompt = read_file("src/sastac/llm/planning_prompt.txt")
-conveter_prompt = read_file("src/sastac/llm/decomposition_prompt.txt")
+
 
 messages: list[dict[str, str]] = []
 
@@ -60,7 +48,7 @@ def get_chat_response() -> LLMInvocation:
             "num_predict": 800,
         }
     )
-    send_message("system", response["message"]["content"])
+    send_message("assistant", response["message"]["content"])
     end = time.time()
     return LLMInvocation(prompt, response["message"]["content"], end - start)
 

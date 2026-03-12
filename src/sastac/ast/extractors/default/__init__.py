@@ -4,7 +4,7 @@ from .constructors import _extract_constructors
 from .docstrings import _extract_docstring
 from .identifiers import _extract_identifier
 from .interfaces import _extract_interfaces
-from .packages import _extract_package
+from .packages import _extract_package, _extract_imports
 from .superclass import _extract_superclass
 from .signature import _extract_signature
 from .utils import _node_text

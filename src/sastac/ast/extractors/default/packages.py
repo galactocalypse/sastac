@@ -13,3 +13,30 @@ def _extract_package(root: Node, source: bytes) -> Optional[str]:
             return text.replace("package", "").replace(";", "").strip()
     return None
 
+
+def _extract_imports(root_node: Node, source_bytes: bytes) -> list[str]:
+    """
+    Extract Java imports from the root AST node.
+
+    Returns fully qualified import paths.
+    """
+    imports: list[str] = []
+
+    for child in root_node.children:
+
+        if child.type != "import_declaration":
+            continue
+
+        text = source_bytes[child.start_byte:child.end_byte].decode("utf-8")
+
+        text = text.strip()
+
+        if text.startswith("import"):
+            text = text.replace("import", "", 1).strip()
+
+        if text.endswith(";"):
+            text = text[:-1]
+
+        imports.append(text)
+
+    return imports

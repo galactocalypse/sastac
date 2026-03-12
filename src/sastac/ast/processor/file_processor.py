@@ -27,5 +27,5 @@ def get_file_meta(file_path):
     language = extract_language(name)
     with open(file_path, "rb") as f:
         source = f.read()
-    return FileMetadata(name=name, language=language, package=None, body=source, hash=compute_file_hash(file_path))
+    return FileMetadata(name=name, file_path=file_path, language=language, package=None, imports=list(), body=source, hash=compute_file_hash(file_path))
 

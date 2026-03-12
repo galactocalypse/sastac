@@ -1,13 +1,7 @@
-import ollama
-from sastac.config.loader import load_config
 import json
 import time
-from pathlib import Path
-from typing import Iterable
 from dataclasses import dataclass, asdict
-from typing import Optional
-from .refiner import refine_task, RefineTaskRequest
-from .model import read_file, generate
+from .model import read_file, generate, write_file
 from .planner import PlannedTask
 from .context import ProjectContext, WorkspaceContext
 
@@ -34,4 +28,14 @@ def generate_execution_plan(execution_plan_request: ExecutionPlanRequest) -> Exe
     response = generate(prompt)
     end = time.time()
     print(f"Decomposer duration: {end-start}s.")
+    log = f"""Task:
+{execution_plan_request.planned_task.task}
+===========
+Prompt:
+{prompt}
+===========
+Response:
+{response.response}
+"""
+    write_file("execution.log", log)
     return ExecutionPlan(json.loads(response.response))

@@ -105,10 +105,15 @@ def process_constructor_declaration(
         "docstring": docstring,
     }
 
+    symbol_path = constructor_name
+    if file_meta.package:
+        symbol_path = file_meta.package + "." + symbol_path
     return StructuralSymbol(
         id=symbol_id,
         type="constructor",
         name=constructor_name,
+        symbol_path=symbol_path,
+        file_path=file_meta.file_path,
         start_line=node.start_point[0] + 1,
         end_line=node.end_point[0] + 1,
         parent_id=parent_class_id,
