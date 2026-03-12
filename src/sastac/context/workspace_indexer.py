@@ -5,7 +5,7 @@ import time
 from pathlib import Path
 from typing import List
 
-from sastac.fs.service import FileSystemService
+from sastac.util.service import FileSystemService
 from sastac.storage.scopes.workspace_storage import WorkspaceStorage
 from sastac.ast.chunk_indexer import ChunkIndexer
 

@@ -30,7 +30,7 @@ def deep_merge(base: dict, override: dict) -> dict:
 
 
 def load_default_config() -> dict:
-    data = files("sastac.config").joinpath("default.yaml").read_text()
+    data = files("sastac.files.config").joinpath("default.yaml").read_text()
     return yaml.safe_load(data) or {}
 
 

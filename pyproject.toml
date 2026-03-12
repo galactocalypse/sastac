@@ -40,4 +40,6 @@ addopts = "-ra --strict-markers"
 [tool.setuptools.packages.find]
 where = ["src"]
 
-
+[tool.setuptools.package-data]
+"sastac.files.config" = ["*.yaml"]
+"sastac.files" = ["*.txt", "prompts/*.txt"]

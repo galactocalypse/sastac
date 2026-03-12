@@ -7,7 +7,7 @@ from typing import List
 
 import pytest
 
-from sastac.fs.service import FileSystemService
+from sastac.util.service import FileSystemService
 
 
 class TestFileSystemService:

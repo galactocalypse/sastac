@@ -1,7 +1,7 @@
 import time
 from pathlib import Path
 
-from sastac.index.workspace_indexer import WorkspaceIndexer
+from sastac.context.workspace_indexer import WorkspaceIndexer
 from sastac.ast.chunk_indexer import ChunkIndexer
 
 
@@ -112,7 +112,7 @@ class TestWorkspaceIndexer:
         fake_workspace_storage,
         write_file,
     ):
-        from sastac.index import workspace_indexer as wi
+        from sastac.context import workspace_indexer as wi
         monkeypatch.setattr(wi, "MAX_FILE_SIZE", 100)
 
         write_file(temp_workdir / "big.py", "x" * 500)
@@ -185,7 +185,7 @@ class TestWorkspaceIndexer:
         fake_workspace_storage,
         write_file,
     ):
-        from sastac.index import workspace_indexer as wi
+        from sastac.context import workspace_indexer as wi
         monkeypatch.setattr(wi, "MAX_FILES", 2)
 
         for i in range(5):
