@@ -1,7 +1,0 @@
-Create a detailed design for building a CLI-based agentic coding assistant in python, similar to Claude Code or Codex.
-Stack:
-* Ollama to host deepseek-coder:6.7b-instruct
-* Embeddings: nomic-embed-text
-* qdrant for vector storage
-* sqlite for other storage
-* CLI interfacing - argparse
