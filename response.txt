@@ -1,39 +1,73 @@
-### Summary of Key Functions and Classes
+### Evaluation
 
-#### `ChunkIndexer` Class:
-- **Purpose**: Processes each file to extract code chunks, embeds them, and stores them.
-- **Key Methods**:
-  - `index(files: List[Path]) -> None`: Processes files, extracts chunks, embeds, and stores them.
-  - `index_chunks(files: List[Path]) -> List[str]`: Calls the `index` method to process files.
+- requires_clarification: False
+- clarification_questions: []
+- requires_additional_context: False
+- additional_context_queries: []
 
-#### `WorkspaceIndexer` Class:
-- **Purpose**: Manages the indexing of a workspace, including file metadata storage and chunk indexing.
-- **Key Methods**:
-  - `__init__(workspace_id: str, base_dir: Path, embed_fn, storage: WorkspaceStorage | None = None)`: Initializes the indexer with necessary components.
-  - `index_files(root: Path) -> tuple[List[Path], List[Path]]`: Retrieves and processes files within a workspace directory.
-  - `build(root: Path)`: Builds the workspace index by indexing all files and summarizing modified directories.
+### Explanation
 
-#### `ChunkIndexer` Methods:
-- **Purpose**: Extracts code chunks from source code, embeds them, and stores them in a storage system.
-- **Key Methods**:
-  - `index(files: List[Path]) -> None`: Processes each file to extract chunks, embed, and store.
-  - `index_chunks(files: List[Path]) -> List[str]`: Calls the `index` method to process files.
+The SASTAC project implements file chunking in the `src/sastac/ast/chunk_indexer.py` module. The `ChunkIndexer` class is responsible for indexing source files by extracting AST code chunks, embedding them, and upserting into a vector store via `workspace_storage`.
 
-#### `WorkspaceIndexer` Methods:
-- **Purpose**: Manages the indexing of a workspace, including file metadata storage and chunk indexing.
-- **Key Methods**:
-  - `__init__(workspace_id: str, base_dir: Path, embed_fn, storage: WorkspaceStorage | None = None)`: Initializes the indexer with necessary components.
-  - `index_files(root: Path) -> tuple[List[Path], List[Path]]`: Retrieves and processes files within a workspace directory.
-  - `build(root: Path)`: Builds the workspace index by indexing all files and summarizing modified directories.
+#### Class Definition
 
-### Key Functions:
-- **`compute_file_hash(file_path, algorithm='sha256', buffer_size=65536)`**: Computes the hash of a file by reading it in chunks.
-- **`extract_code_chunks(language: str, source: str | bytes) -> List[CodeChunk]`**: Parses `source` for the given language and returns a list of CodeChunk objects for every extractable node.
-- **`index(self, files: List[Path]) -> None`**: Processes each file to extract chunks, embed, and store.
-- **`build(self, root: Path) -> None`**: Builds the workspace index by indexing all files and summarizing modified directories.
+```python
+class ChunkIndexer:
+    """
+    Indexes source files by extracting AST code chunks, embedding them,
+    and upserting into a vector store via ``workspace_storage``.
 
-### Key Classes:
-- **`ChunkIndexer`**: Manages the extraction of code chunks from source code, embedding them, and storing them in a storage system.
-- **`WorkspaceIndexer`**: Manages the indexing of a workspace, including file metadata storage and chunk indexing.
+    Parameters
+    ----------
+    storage:
+        An object with a ``.vector`` attribute that has an
+        ``upsert(ids, vectors, metadata)`` method.
+    embed_fn:
+        A callable ``(text: str) -> list[float]`` that returns an embedding.
+    """
+    
+    def __init__(self, storage, embed_fn: Callable[[str], List[float]]):
+```
 
-These classes and functions work together to process files, extract code chunks, embed them, and store them for efficient querying and analysis.
+- **Parameters**:
+  - `storage`: An object with a `.vector` attribute that has an `upsert(ids, vectors, metadata)` method. This is used to store the indexed chunks.
+  - `embed_fn`: A callable `(text: str) -> list[float]` that returns an embedding of the text.
+
+#### Implementation
+
+The `ChunkIndexer` class initializes with a `storage` object and an `embed_fn`. The `__init__` method sets up these parameters. The `upsert` method is used to store the indexed chunks in the vector store.
+
+### Function Definition
+
+```python
+def chunk_distribution(storage):
+    """
+    None
+    """
+    
+    print_header("CHUNK DISTRIBUTION")
+    
+    # Instead of semantic query, fetch many random-ish hits
+    dummy = embed("code")
+    hits = storage.vector.query(dummy, top_k=1000)
+    
+    per_file = Counter()
+    node_types = Counter()
+    
+    for h in hits:
+        payload = extract_payload(h)
+    
+        f = payload.get("file")
+```
+
+- **Parameters**:
+  - `storage`: An object with a `.vector` attribute that has an `upsert(ids, vectors, metadata)` method. This is used to store the indexed chunks.
+
+- **Functionality**:
+  - The function prints "CHUNK DISTRIBUTION".
+  - It uses a dummy embedding of the string "code" to fetch many random-ish hits from the vector store.
+  - It initializes two counters: `per_file` and `node_types`.
+  - For each hit, it extracts the payload and retrieves the file name (`f`).
+  - The function then updates the counters based on the extracted information.
+
+This implementation allows for efficient indexing of source files by extracting AST code chunks, embedding them, and storing them in a vector store, which can be used for further analysis or retrieval.

@@ -8,7 +8,7 @@ from dataclasses import dataclass, asdict
 from typing import Optional
 from .refiner import RefinedTask
 from sastac.context.context import ChatContext, ProjectContext, WorkspaceContext, TaskContext, SessionContext
-from sastac.llm.model import get_chat_response, generate
+from sastac.llm.model import generate
 from sastac.util.logger import logger
 
 

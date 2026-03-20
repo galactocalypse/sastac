@@ -4977,6 +4977,7 @@ source = { editable = "." }
 dependencies = [
     { name = "ollama" },
     { name = "open-webui" },
+    { name = "pytest" },
     { name = "python-dotenv" },
     { name = "pyyaml" },
     { name = "qdrant-client" },
@@ -4999,6 +5000,7 @@ dev = [
 requires-dist = [
     { name = "ollama", specifier = ">=0.6.1" },
     { name = "open-webui", specifier = ">=0.8.8" },
+    { name = "pytest", specifier = ">=9.0.2" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8" },
     { name = "pytest-asyncio", marker = "extra == 'dev'" },
     { name = "pytest-cov", marker = "extra == 'dev'" },

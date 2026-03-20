@@ -17,6 +17,7 @@ from sastac.context.retriever import retrieve_task_specific_context
 from sastac.storage.scopes.workspace_storage import WorkspaceStorage
 from sastac.util.service import InternalFileService
 from sastac.config.loader import ConfigService
+from sastac.agent.analyzer import analyze
 
 
 cfg = ConfigService.load()
@@ -57,41 +58,62 @@ def initialize_session(project_id: str, base_directory: str):
     
 
 def process_task(user_input: str) -> TaskResponse:
-    session_context.send_message("user", "user_input")
+    session_context.send_message("user", user_input)
     task_response = TaskResponse(None, None)
     task_completed = False
-    while not task_completed:
-        chat_context = session_context.chat_context
-        project_context = session_context.project_context
-        storage = session_context.storage
-        workspace_context = get_workspace_context(Path(project_context.base_directory), storage=storage)
 
-        # 1. Refine
-        logger.debug("Resolving intent for the given task")
-        refining_request = RefineTaskRequest(chat_context, project_context, workspace_context, user_input)
-        refined_task = retry(
-            refine_task,
-            MAX_REFINING_ATTEMPTS,
-            "RefineTask",
-            refining_request
-        )
-        logger.debug(f"Resolved intent for the given task to '{refined_task.intent}' in {refined_task.monitoring.get('duration')}s")
+    chat_context = session_context.chat_context
+    project_context = session_context.project_context
+    storage = session_context.storage
+    workspace_context = get_workspace_context(Path(project_context.base_directory), storage=storage)
+
+    # 1. Refine
+    logger.debug("Resolving intent for the given task")
+    refining_request = RefineTaskRequest(chat_context, project_context, workspace_context, user_input)
+    refined_task = retry(
+        refine_task,
+        MAX_REFINING_ATTEMPTS,
+        "RefineTask",
+        refining_request
+    )
+    logger.debug(f"Resolved intent for the given task to '{refined_task.intent}' in {refined_task.monitoring.get('duration')}s")
+
+    while not task_completed:
+
+        if refined_task.intent == "conceptual":
+            # Respond
+            chat_query = ChatQuery(
+                task=refined_task, 
+                project_context=project_context, 
+                workspace_context=workspace_context
+            )
+            task_response.chat_response = summarize(session_context, chat_query)
+            task_completed = True
+            break
         
         # 2. Retrieve Task Context (Symbols & Files)
-        task_context = None
-        if refined_task.intent in ["workspace_mutation", "analysis"]:
-            logger.debug(f"Retrieving task-specific context for: {refined_task.task[:50]}...")
-            task_context = retrieve_task_specific_context(
-                workspace_id=session_context.project_id,
-                base_dir=Path(project_context.base_directory),
-                task_description=refined_task.task,
-                storage=storage,
-                top_k=cfg.embeddings.top_k,
-                score_threshold=cfg.embeddings.score_threshold
-            )
+        task_context = retrieve_task_specific_context(
+            workspace_id=session_context.project_id,
+            base_dir=Path(project_context.base_directory),
+            task_description=refined_task.task,
+            storage=storage,
+            top_k=cfg.embeddings.top_k,
+            score_threshold=cfg.embeddings.score_threshold
+        )
 
-        # 3. Route
-        if refined_task.intent == "workspace_mutation":
+        if refined_task.intent == "analysis":
+            # Respond
+            chat_query = ChatQuery(
+                task=refined_task, 
+                project_context=project_context, 
+                workspace_context=workspace_context,
+                task_context=task_context
+            )
+            task_response.chat_response = analyze(session_context, chat_query)
+            task_completed = True
+            break
+
+        if refined_task.intent in ["feature", "refactor", "modification", "bugfix", "add_tests", "testfix"]:
             # Plan
             planning_request = PlanningRequest(
                 task=refined_task, 
@@ -114,31 +136,10 @@ def process_task(user_input: str) -> TaskResponse:
                 "CreateExecutionPlan", 
                 exection_plan_request
             )
+            task_completed = True
+            break
 
-        elif refined_task.intent == "conceptual":
-            # Respond
-            chat_query = ChatQuery(
-                task=refined_task, 
-                project_context=project_context, 
-                workspace_context=workspace_context
-            )
-            task_response.chat_response = summarize(session_context, chat_query)
-
-        elif refined_task.intent == "analysis":
-            # Respond
-            chat_query = ChatQuery(
-                task=refined_task, 
-                project_context=project_context, 
-                workspace_context=workspace_context,
-                task_context=task_context
-            )
-            task_response.chat_response = summarize(session_context, chat_query)
-        else:
-            raise Exception(f"Unsupported intent: {refined_task.intent}")
-
-        # apply tool_calls
-        # validate
-        task_completed = True
+        raise Exception(f"Unsupported intent: {refined_task.intent}")
 
     InternalFileService.write_file("chat.json", json.dumps(session_context.chat_context.messages[1:], indent=True))
     return task_response
