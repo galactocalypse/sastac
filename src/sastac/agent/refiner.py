@@ -28,7 +28,7 @@ def refine_task(request: RefineTaskRequest) -> RefinedTask:
     start = time.time()
     InternalFileService.write_file("refiner/input.log", request.user_input)
     prompt = refiner_prompt \
-        .replace("{chat_summary}", request.chat_context.summary or "-") \
+        .replace("{chat_summary}", request.chat_context.get_summary() or "-") \
         .replace("{task}", request.user_input) \
         .replace("{project_instructions}", request.project_context.system_instructions) \
         .replace("{project}", request.project_context.project_readme) \

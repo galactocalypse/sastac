@@ -1,12 +1,17 @@
-from sastac.agent.workflow import initialize_chat, process_task, initialize_session
+import sys
+import os
+
+# Add the 'src' directory to the Python path to allow importing the 'sastac' package
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
+
+from sastac.agent.workflow import process_task, initialize_session
 from sastac.util.service import FileService
 import json
 from dataclasses import asdict
 
 if __name__ == "__main__":
     initialize_session("sastac", "/home/adarsh/code/sastac")
-    initialize_chat()
-    task_response = process_task("Implement a file chunking module")
+    task_response = process_task("Describe in detail how file chunking is implemented")
     if task_response.chat_response:
         FileService.write_file("response.txt", task_response.chat_response.response)
     elif task_response.execution_plan:

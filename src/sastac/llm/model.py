@@ -30,7 +30,8 @@ def generate(prompt: str, prediction_length = 400, format: str | dict[str, objec
     end = time.time()
     return LLMInvocation(prompt, response.response, end - start)
 
-def get_chat_response() -> LLMInvocation:
+
+def get_chat_response(messages: list[dict[str, str]]) -> LLMInvocation:
     start = time.time()
     prompt = messages[-1]["content"]
     response = ollama.chat(
@@ -41,13 +42,5 @@ def get_chat_response() -> LLMInvocation:
             "num_predict": 800,
         }
     )
-    send_message("assistant", response["message"]["content"])
     end = time.time()
     return LLMInvocation(prompt, response["message"]["content"], end - start)
-
-
-def send_message(role: str, message: str):
-    messages.append({
-        "role": role,
-        "content": message
-    })

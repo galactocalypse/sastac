@@ -11,6 +11,7 @@ import uuid
 from qdrant_client.models import PointIdsList
 from typing import List, cast
 from qdrant_client.models import PointIdsList, ExtendedPointId
+import hashlib
 
 
 class QdrantVectorStore(VectorStore):
@@ -23,13 +24,13 @@ class QdrantVectorStore(VectorStore):
 
     def upsert(self, ids, vectors, metadata):
         points = [
-            PointStruct(id=i, vector=v, payload=m)
+            PointStruct(id=_normalize_id(i), vector=v, payload=m)
             for i, v, m in zip(ids, vectors, metadata)
         ]
         self.client.upsert(collection_name=self.collection, points=points)
 
 
-    def query(self, vector, top_k, filters=None) -> List[Dict[str, Any]]:
+    def query(self, vector, top_k, score_threshold=0.6, filters=None) -> List[Dict[str, Any]]:
         filter_obj = _build_filter(filters)
 
         hits = self.client.query_points(
@@ -41,7 +42,8 @@ class QdrantVectorStore(VectorStore):
 
         results: List[Dict[str, Any]] = []
         for h in hits:
-            results.append(dict(h.payload or {}))
+            if h.score >= score_threshold:
+                results.append({"score": h.score, "document": dict(h.payload or {})})
 
         return results
 
@@ -85,8 +87,13 @@ def _build_filter(filters: Dict[str, Any] | None) -> Filter | None:
 
 def _normalize_id(i):
     if isinstance(i, uuid.UUID):
+        return str(i)
+    if isinstance(i, int):
         return i
+    
+    # Try to parse as UUID
     try:
-        return uuid.UUID(str(i))
+        return str(uuid.UUID(str(i)))
     except Exception:
-        return uuid.uuid4()
+        # Deterministic hash of the string to a UUID
+        return str(uuid.UUID(hashlib.md5(str(i).encode()).hexdigest()))

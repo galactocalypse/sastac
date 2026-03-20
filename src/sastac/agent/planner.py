@@ -9,7 +9,7 @@ from typing import Optional
 from .refiner import refine_task, RefineTaskRequest, RefinedTask
 from sastac.llm.model import generate
 from sastac.util.service import PackageDataService, InternalFileService
-from sastac.context.context import ProjectContext, WorkspaceContext
+from sastac.context.context import ProjectContext, WorkspaceContext, TaskContext
 
 planner_prompt = PackageDataService.read_text("sastac.files", "planning_prompt.txt")
 
@@ -18,6 +18,7 @@ class PlanningRequest:
     task: RefinedTask
     project_context: ProjectContext
     workspace_context: WorkspaceContext
+    task_context: Optional[TaskContext] = None
 
 @dataclass
 class PlannedTask:
@@ -26,11 +27,16 @@ class PlannedTask:
 def plan_task(planning_request: PlanningRequest) -> PlannedTask:
     start = time.time()
     InternalFileService.write_file("planner/input.log", planning_request.task.task)
+    relevant_symbols = ""
+    if planning_request.task_context:
+        relevant_symbols = f"\n\n### Task-Specific Symbol Context\n{planning_request.task_context.formatted_context}"
+
     prompt = planner_prompt \
         .replace("{task}", planning_request.task.task) \
         .replace("{files}", planning_request.workspace_context.file_listing) \
         .replace("{project}", planning_request.project_context.project_readme) \
-        .replace("{project_instructions}", planning_request.project_context.system_instructions)
+        .replace("{project_instructions}", planning_request.project_context.system_instructions) \
+        .replace("{relevant_symbols}", relevant_symbols)
 
     InternalFileService.write_file("planner/prompt.log", prompt)
     response = generate(prompt, format={
@@ -48,7 +54,7 @@ def plan_task(planning_request: PlanningRequest) -> PlannedTask:
             "relevant_modules": {
                 "type": "object",
                 "patternProperties": {
-                    "^\[a-zA-Z0-9_]+\.\[a-zA-Z0-9_]+$": {
+                    r"^[a-zA-Z0-9_]+\.[a-zA-Z0-9_]+$": {
                         "type": "object",
                         "properties": {
                             "relevance_reason": {

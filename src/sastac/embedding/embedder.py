@@ -30,7 +30,7 @@ def embed(text: Union[str, List[str]]):
         logger.error(f"Model: {_model}")
         logger.error(f"input: {input_texts}")
         logger.error(f"Error embedding text: {e}")
-        raise
+        raise e
 
     embeddings = response["embeddings"]
 

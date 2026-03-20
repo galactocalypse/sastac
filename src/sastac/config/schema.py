@@ -8,6 +8,8 @@ from typing import Optional
 class EmbeddingConfig:
     model: str
     vector_size: int
+    score_threshold: float
+    top_k: int
 
 @dataclass
 class LLMConfig:

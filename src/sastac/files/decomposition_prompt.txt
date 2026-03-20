@@ -8,7 +8,8 @@ Transform the provided <plan> into an array of atomic executable tool calls base
 
 [AVAILABLE_TOOLS]
 - read_file(path: string)
-- write_file(path: string, content: string)
+- write_file(path: string, content: string) - Use ONLY for updating EXISTING files.
+- create_file(path: string, content: string) - Use ONLY for creating NEW files that do not exist.
 - run_script(command: string)
 
 [VALID_OUTPUT_SCHEMA]
@@ -32,6 +33,10 @@ Transform the provided <plan> into an array of atomic executable tool calls base
 {plan}
 
 [EXECUTION_STAKES]
+- If you call create_file on a path that already exists in [CONTEXT_FILES], the system will FAULT.
+- If you call write_file on a path NOT in [CONTEXT_FILES], the system will FAULT.
+- Always check the file listing carefully.
+
 The output is piped directly to a hardware executor. Any characters outside the [ ] array boundaries will result in a critical system crash.
 
 Your response MUST begin with the '[' character. Do not repeat the prompt. Do not use backticks.

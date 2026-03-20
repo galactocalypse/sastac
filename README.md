@@ -78,6 +78,15 @@ python scripts/clear_workspace_index.py booklore
 python -m sastac.llm.workflow
 ```
 
+### Running the API Server (OpenAI-Compliant)
+You can expose `sastac` as an OpenAI-compatible API to use with extensions like Cline.
+
+```bash
+uv run python3 -m sastac.api.server
+```
+
+The API will be available at `http://localhost:8000/v1`. Use the model ID `sastac-agent`.
+
 ### System Requirements
 
 * OS: Ubuntu 24.04.2 LTS

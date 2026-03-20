@@ -1,0 +1,39 @@
+### Summary of Key Functions and Classes
+
+#### `ChunkIndexer` Class:
+- **Purpose**: Processes each file to extract code chunks, embeds them, and stores them.
+- **Key Methods**:
+  - `index(files: List[Path]) -> None`: Processes files, extracts chunks, embeds, and stores them.
+  - `index_chunks(files: List[Path]) -> List[str]`: Calls the `index` method to process files.
+
+#### `WorkspaceIndexer` Class:
+- **Purpose**: Manages the indexing of a workspace, including file metadata storage and chunk indexing.
+- **Key Methods**:
+  - `__init__(workspace_id: str, base_dir: Path, embed_fn, storage: WorkspaceStorage | None = None)`: Initializes the indexer with necessary components.
+  - `index_files(root: Path) -> tuple[List[Path], List[Path]]`: Retrieves and processes files within a workspace directory.
+  - `build(root: Path)`: Builds the workspace index by indexing all files and summarizing modified directories.
+
+#### `ChunkIndexer` Methods:
+- **Purpose**: Extracts code chunks from source code, embeds them, and stores them in a storage system.
+- **Key Methods**:
+  - `index(files: List[Path]) -> None`: Processes each file to extract chunks, embed, and store.
+  - `index_chunks(files: List[Path]) -> List[str]`: Calls the `index` method to process files.
+
+#### `WorkspaceIndexer` Methods:
+- **Purpose**: Manages the indexing of a workspace, including file metadata storage and chunk indexing.
+- **Key Methods**:
+  - `__init__(workspace_id: str, base_dir: Path, embed_fn, storage: WorkspaceStorage | None = None)`: Initializes the indexer with necessary components.
+  - `index_files(root: Path) -> tuple[List[Path], List[Path]]`: Retrieves and processes files within a workspace directory.
+  - `build(root: Path)`: Builds the workspace index by indexing all files and summarizing modified directories.
+
+### Key Functions:
+- **`compute_file_hash(file_path, algorithm='sha256', buffer_size=65536)`**: Computes the hash of a file by reading it in chunks.
+- **`extract_code_chunks(language: str, source: str | bytes) -> List[CodeChunk]`**: Parses `source` for the given language and returns a list of CodeChunk objects for every extractable node.
+- **`index(self, files: List[Path]) -> None`**: Processes each file to extract chunks, embed, and store.
+- **`build(self, root: Path) -> None`**: Builds the workspace index by indexing all files and summarizing modified directories.
+
+### Key Classes:
+- **`ChunkIndexer`**: Manages the extraction of code chunks from source code, embedding them, and storing them in a storage system.
+- **`WorkspaceIndexer`**: Manages the indexing of a workspace, including file metadata storage and chunk indexing.
+
+These classes and functions work together to process files, extract code chunks, embed them, and store them for efficient querying and analysis.

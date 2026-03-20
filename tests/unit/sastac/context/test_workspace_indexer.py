@@ -48,9 +48,8 @@ class TestWorkspaceIndexer:
         idx = WorkspaceIndexer.__new__(WorkspaceIndexer)
         idx.storage = fake_workspace_storage
 
-        files = idx.index_files(temp_workdir)
-
-        assert len(files) == 1
+        all_files, modified = idx.index_files(temp_workdir)
+        assert len(all_files) == 1
         assert len(fake_workspace_storage.kv.data) == 1
 
 
@@ -94,11 +93,15 @@ class TestWorkspaceIndexer:
         idx = WorkspaceIndexer.__new__(WorkspaceIndexer)
         idx.storage = fake_workspace_storage
         idx.chunk_indexer = ChunkIndexer(fake_workspace_storage, fake_embed)
+        
+        from unittest.mock import MagicMock
+        idx.structure_summarizer = MagicMock()
 
         idx.build(temp_workdir)
 
         assert len(fake_workspace_storage.kv.data) == 1
         assert len(fake_workspace_storage.vector.points) >= 1
+        idx.structure_summarizer.summarize_directory.assert_called_once_with(temp_workdir, [f])
 
 
     # ------------------------------------------
@@ -120,9 +123,9 @@ class TestWorkspaceIndexer:
         idx = WorkspaceIndexer.__new__(WorkspaceIndexer)
         idx.storage = fake_workspace_storage
 
-        files = idx.index_files(temp_workdir)
+        all_files, modified = idx.index_files(temp_workdir)
 
-        assert files == []
+        assert all_files == []
         assert fake_workspace_storage.kv.data == {}
 
 
@@ -142,9 +145,8 @@ class TestWorkspaceIndexer:
         idx = WorkspaceIndexer.__new__(WorkspaceIndexer)
         idx.storage = fake_workspace_storage
 
-        files = idx.index_files(temp_workdir)
-
-        assert len(files) == 1
+        all_files, modified = idx.index_files(temp_workdir)
+        assert len(all_files) == 1
 
 
     # ------------------------------------------
@@ -194,5 +196,5 @@ class TestWorkspaceIndexer:
         idx = WorkspaceIndexer.__new__(WorkspaceIndexer)
         idx.storage = fake_workspace_storage
 
-        files = idx.index_files(temp_workdir)
-        assert len(files) == 2
+        all_files, modified = idx.index_files(temp_workdir)
+        assert len(all_files) == 2

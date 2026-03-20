@@ -106,6 +106,112 @@ class FileSystemService:
             filter_fn=lambda p: p.suffix.lower() in normalized,
         )
 
+    @staticmethod
+    def get_workspace_files(
+        path: Path,
+        excluded_dirs: Iterable[str] = (".venv", "__pycache__"),
+        excluded_types: Iterable[str] = (".pyc",),
+        prefix: str = "",
+    ) -> List[Path]:
+        """
+        Get workspace files, applying .gitignore rules and basic filtering.
+        """
+        from sastac.util.logger import logger
+        import fnmatch
+        
+        CODE_EXTENSIONS = {".py", ".ts", ".tsx", ".js", ".go", ".java", ".md", ".txt", ".json", ".yaml", ".yml"}
+        
+        ignore_patterns = []
+        gitignore_path = path / ".gitignore"
+        if gitignore_path.exists():
+            try:
+                with open(gitignore_path, "r", encoding="utf-8") as f:
+                    for line in f:
+                        line = line.strip()
+                        if line and not line.startswith("#"):
+                            ignore_patterns.append(line)
+            except Exception as e:
+                logger.warning(f"Failed to read .gitignore: {e}")
+
+        ignore_cache = {}
+        has_negations = any(p.startswith('!') for p in ignore_patterns)
+
+        def is_ignored_by_gitignore(rel: Path) -> bool:
+            if not ignore_patterns:
+                return False
+                
+            parts = rel.parts
+            ignored = False
+            sub_str = ""
+            
+            for idx in range(len(parts)):
+                part = parts[idx]
+                if sub_str:
+                    sub_str = f"{sub_str}/{part}"
+                else:
+                    sub_str = part
+                    
+                is_dir = (idx < len(parts) - 1)
+                
+                cache_key = (sub_str, is_dir)
+                if cache_key in ignore_cache:
+                    ignored = ignore_cache[cache_key]
+                else:
+                    component_ignored = ignored
+                    
+                    for pattern in ignore_patterns:
+                        is_negation = pattern.startswith('!')
+                        if is_negation:
+                            patt = pattern[1:]
+                        else:
+                            patt = pattern
+                            
+                        must_be_dir = patt.endswith('/')
+                        if must_be_dir:
+                            patt = patt[:-1]
+                        
+                        if must_be_dir and not is_dir:
+                            continue
+                        
+                        matched = False
+                        if patt.startswith('/'):
+                            matched = fnmatch.fnmatch(sub_str, patt[1:])
+                        else:
+                            matched = fnmatch.fnmatch(part, patt) or fnmatch.fnmatch(sub_str, patt)
+                                
+                        if matched:
+                            component_ignored = not is_negation
+                    
+                    ignored = component_ignored
+                    ignore_cache[cache_key] = ignored
+                    
+                if ignored and not has_negations:
+                    return True
+                        
+            return ignored
+
+        def filter_fn(p: Path) -> bool:
+            # Get path relative to the root if it's absolute
+            try:
+                rel = p.relative_to(path)
+            except ValueError:
+                rel = p
+                
+            if is_ignored_by_gitignore(rel):
+                return False
+                
+            exclude_dir = any(dir_name in p.parts for dir_name in excluded_dirs)
+            exclude_type = any(p.suffix == ext for ext in excluded_types)
+            is_code = p.suffix.lower() in CODE_EXTENSIONS
+            prefix_match = (not prefix or str(rel).startswith(prefix))
+            
+            keep = not exclude_dir and not exclude_type and is_code and prefix_match
+            return keep
+
+        files = FileSystemService.list_files(path, filter_fn=filter_fn)
+        logger.debug(f"Discovered {len(files)} files in {path} with prefix '{prefix}'")
+        return files
+
 
 class PackageDataService:
     """

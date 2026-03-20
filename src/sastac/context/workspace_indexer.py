@@ -8,6 +8,7 @@ from typing import List
 from sastac.util.service import FileSystemService
 from sastac.storage.scopes.workspace_storage import WorkspaceStorage
 from sastac.ast.chunk_indexer import ChunkIndexer
+from sastac.context.structure_summarizer import StructureSummarizer
 from sastac.context.file_indexer import FileIndexer
 from sastac.util.logger import logger
 
@@ -64,19 +65,24 @@ def should_skip(path: Path) -> bool:
 
 class WorkspaceIndexer:
 
-    def __init__(self, workspace_id: str, base_dir: Path, embed_fn):
-        self.storage = WorkspaceStorage(workspace_id, base_dir)
+    def __init__(self, workspace_id: str, base_dir: Path, embed_fn, storage: WorkspaceStorage | None = None):
+        self.storage = storage or WorkspaceStorage(workspace_id, base_dir)
         self.chunk_indexer = ChunkIndexer(self.storage, embed_fn)
+        self.structure_summarizer = StructureSummarizer(self.storage)
 
     # ------------------------------------
     # Step 1: File metadata → SQLite
     # ------------------------------------
 
-    def index_files(self, root: Path) -> List[Path]:
+    def index_files(self, root: Path) -> tuple[List[Path], List[Path]]:
 
-        files = FileSystemService.list_files(root=root, recursive=True)
+        files = FileSystemService.get_workspace_files(
+            path=root,
+            prefix=''
+        )
 
         indexed = []
+        modified = []
 
         for f in files:
 
@@ -116,19 +122,20 @@ class WorkspaceIndexer:
 
             self.storage.kv.set(key, metadata)
             indexed.append(f)
+            modified.append(f)
 
-        logger.info(f"Indexed metadata for {len(indexed)} files")
-        return indexed
+        logger.info(f"Indexed metadata for {len(indexed)} files, {len(modified)} modified")
+        return indexed, modified
 
 
     # ------------------------------------
     # Step 2: Code chunks → Qdrant
     # ------------------------------------
 
-    def index_chunks(self, files: List[Path]):
+    def index_chunks(self, files: List[Path]) -> List[str]:
 
         logger.info("Chunk indexing started")
-        self.chunk_indexer.index(files)
+        return self.chunk_indexer.index(files)
 
 
     # ------------------------------------
@@ -139,7 +146,20 @@ class WorkspaceIndexer:
 
         logger.info(f"Indexing workspace at {root}")
 
-        files = self.index_files(root)
-        self.index_chunks(files)
+        all_files, modified_files = self.index_files(root)
+        if modified_files:
+            logger.info(f"Re-indexing {len(modified_files)} modified files")
+            chunk_ids = self.index_chunks(modified_files)
+            logger.info(f"Finished indexing {len(chunk_ids)} chunks for {len(modified_files)} modified files")
+            # Summarize directories of modified files
+            modified_dirs = {f.parent for f in modified_files}
+            for d in modified_dirs:
+                # Find all logical files in this dir to provide context
+                dir_files = [f for f in all_files if f.parent == d]
+                self.structure_summarizer.summarize_directory(d, dir_files)
+            logger.info(f"Summarized {len(modified_dirs)} directories")
+        else:
+            logger.info("No files modified; skipping chunk indexing")
 
         logger.info("Workspace indexing complete")
+        return all_files

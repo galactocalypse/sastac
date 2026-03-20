@@ -57,7 +57,7 @@ class ChunkIndexer:
     # Public
     # --------------------------------------------------
 
-    def index(self, files: List[Path]) -> None:
+    def index(self, files: List[Path]) -> List[str]:
         """
         Process each file, extract chunks, embed, and store.
         """
@@ -81,14 +81,16 @@ class ChunkIndexer:
                 chunk_id = f"{path}:{chunk.start_line}:{chunk.end_line}:{chunk.name}"
                 text = chunk.body
 
-                try:
-                    vector = self.embed_fn(text)
-                except Exception:
-                    continue
+                vector = self.embed_fn(text)
 
                 ids.append(chunk_id)
                 vectors.append(vector)
-                metadata.append(chunk.to_metadata())
+                
+                meta = chunk.to_metadata()
+                meta["path"] = str(path)
+                meta["body"] = text
+                metadata.append(meta)
 
         if ids:
             self.storage.vector.upsert(ids, vectors, metadata)
+        return ids

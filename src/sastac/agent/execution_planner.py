@@ -37,7 +37,7 @@ def generate_execution_plan(execution_plan_request: ExecutionPlanRequest) -> Exe
             "properties": {
                 "tool": {
                     "type": "string",
-                    "enum": ["read_file", "write_file", "run_script"]
+                    "enum": ["read_file", "write_file", "create_file", "run_script"]
                 },
                 "parameters": {
                     "type": "object",
